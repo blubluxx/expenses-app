@@ -19,6 +19,7 @@ class User(Base):
     Attributes:
         id (uuid.UUID): Unique identifier of the user.
         username (str): Username of the user.
+        email (str): Email of the user.
         password (str): Password of the user.
         created_at (datetime): Timestamp when the user was created.
 
@@ -36,6 +37,7 @@ class User(Base):
         nullable=False,
     )
     username: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
