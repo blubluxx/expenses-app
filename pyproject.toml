@@ -5,6 +5,8 @@ description = "An API designed to track your expenses"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "pydantic-settings>=2.7.0",
+    "sqlalchemy>=2.0.36",
     "fastapi>=0.115.6",
     "uvicorn>=0.34.0",
 ]
