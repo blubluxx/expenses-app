@@ -1,4 +1,5 @@
 from urllib.parse import urljoin
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
@@ -31,6 +32,7 @@ def _create_app() -> FastAPI:
         openapi_url=urljoin(get_settings().API_V1_STR, "openapi.json"),
         version=get_settings().VERSION,
         docs_url="/docs",
+        lifespan=lifespan,
     )
     app_.include_router(
         api_router,
@@ -39,6 +41,14 @@ def _create_app() -> FastAPI:
     return app_
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Context manager to handle the lifespan of the FastAPI application.
+    """
+    await initialize_database()
+    yield
+
+
 app = _create_app()
 _setup_cors(app)
-initialize_database()
