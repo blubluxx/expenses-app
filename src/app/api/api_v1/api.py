@@ -1,3 +1,5 @@
+"""REST API endpoints"""
+
 from fastapi import APIRouter
 
 from app.api.api_v1.routes import auth

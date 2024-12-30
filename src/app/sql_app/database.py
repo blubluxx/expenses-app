@@ -1,10 +1,17 @@
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.core.config import get_settings
 
-engine = create_engine(get_settings().DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+DATABASE_URL = get_settings().DATABASE_URL
+
+engine: AsyncEngine = create_async_engine(DATABASE_URL, echo=True)
+
+AsyncSessionLocal = sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
 
 
 class Base(DeclarativeBase):
@@ -12,7 +19,7 @@ class Base(DeclarativeBase):
 
 
 # Dependency
-def get_db():
+async def get_db():
     """
     Provides a database session for use in a context manager.
 
@@ -21,14 +28,11 @@ def get_db():
 
     Ensures that the database session is properly closed after use.
     """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    async with AsyncSessionLocal() as session:
+        yield session
 
 
-def create_uuid_extension():
+async def create_uuid_extension():
     """
     Creates the "uuid-ossp" extension in the connected PostgreSQL database if it does not already exist.
 
@@ -36,12 +40,11 @@ def create_uuid_extension():
     begins a transaction, and executes the SQL command to create the "uuid-ossp" extension.
     The "uuid-ossp" extension provides functions to generate universally unique identifiers (UUIDs).
     """
-    with engine.connect() as connection:
-        with connection.begin():
-            connection.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'))
+    async with engine.begin() as connection:
+        await connection.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'))
 
 
-def create_tables():
+async def create_tables():
     """
     Create all tables in the database.
 
@@ -49,28 +52,30 @@ def create_tables():
     in the Base class. It binds the metadata to the specified engine and creates
     the tables if they do not already exist.
     """
-    Base.metadata.create_all(bind=engine)
+    with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
-def is_database_initialized():
+async def is_database_initialized() -> bool:
     """
     Check if the database is already initialized by inspecting its tables.
 
     Returns:
         bool: True if tables exist, False otherwise.
     """
-    inspector = inspect(engine)
-    tables = inspector.get_table_names()
-    return len(tables) > 0
+    async with engine.connect() as connection:
+        inspector = inspect(connection)
+        tables = await connection.run_sync(inspector.get_table_names)
+        return len(tables) > 0
 
 
-def initialize_database():
+async def initialize_database():
     """
     Initialize the database by creating the tables and the "uuid-ossp" extension.
 
     This function calls the create_tables() and create_uuid_extension() functions
     to create the necessary tables and enable the "uuid-ossp" extension in the database.
     """
-    if not is_database_initialized():
-        create_uuid_extension()
-        create_tables()
+    if not await is_database_initialized():
+        await create_uuid_extension()
+        await create_tables()
