@@ -1,9 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.user import User
+from app.schemas.common.messages import MessageResponse
 from app.services.utils.processors import process_db_transaction
-from app.services.utils.validators import unique_username
-from app.schemas.exceptions.application_error import ApplicationError
+from app.services.utils.validators import unique_username, unique_email
+from app.schemas.common.application_error import ApplicationError
 
 
 async def register(user: User, db: AsyncSession):
@@ -18,8 +19,24 @@ async def register(user: User, db: AsyncSession):
         Any: The result of the database transaction.
     """
 
-    def _register():
-        pass
+    async def _register():
+        if not unique_username(user.username, db):
+            raise ApplicationError(
+                status=409,
+                detail="Username already exists",
+            )
+
+        if not unique_email(user.email, db):
+            raise ApplicationError(
+                status=409,
+                detail="Email already exists",
+            )
+
+        new_user = User(**user.model_dump())
+        db.add(new_user)
+        await db.commit()
+        db.refresh(new_user)
+        return MessageResponse(message="User registered successfully")
 
     return await process_db_transaction(
         transaction_func=_register,

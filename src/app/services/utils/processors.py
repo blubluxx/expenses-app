@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 
-from app.schemas.exceptions.application_error import ApplicationError
+from app.schemas.common.application_error import ApplicationError
 
 logger = logging.getLogger(__name__)
 
