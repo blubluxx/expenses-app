@@ -10,4 +10,7 @@ dependencies = [
     "fastapi>=0.115.6",
     "uvicorn>=0.34.0",
     "mypy>=1.14.0",
+    "psycopg2>=2.9.10",
+    "python-dotenv>=1.0.1",
+    "pydantic[mypy]>=2.10.4",
 ]
