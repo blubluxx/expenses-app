@@ -7,7 +7,7 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "run_server:app",
+                "src.run_server:app",
                 "--reload"
             ],
             "justMyCode": true,

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.core.config import get_settings
@@ -52,6 +52,18 @@ def create_tables():
     Base.metadata.create_all(bind=engine)
 
 
+def is_database_initialized():
+    """
+    Check if the database is already initialized by inspecting its tables.
+
+    Returns:
+        bool: True if tables exist, False otherwise.
+    """
+    inspector = inspect(engine)
+    tables = inspector.get_table_names()
+    return len(tables) > 0
+
+
 def initialize_database():
     """
     Initialize the database by creating the tables and the "uuid-ossp" extension.
@@ -59,5 +71,6 @@ def initialize_database():
     This function calls the create_tables() and create_uuid_extension() functions
     to create the necessary tables and enable the "uuid-ossp" extension in the database.
     """
-    create_uuid_extension()
-    create_tables()
+    if not is_database_initialized():
+        create_uuid_extension()
+        create_tables()
