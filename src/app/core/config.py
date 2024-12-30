@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
 
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
-    VERSION: Optional[str] = "9.9.9.9"
+    VERSION: str = "9.9.9.9"
 
     @field_validator("BACKEND_CORS_ORIGINS", check_fields=False)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
