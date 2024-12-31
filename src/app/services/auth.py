@@ -1,13 +1,13 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.user import User
-from app.schemas.common.messages import MessageResponse
+from app.schemas.common.messages import ResponseMessage
 from app.services.utils.processors import process_db_transaction
 from app.services.utils.validators import unique_username, unique_email
 from app.schemas.common.application_error import ApplicationError
 
 
-async def register(user: User, db: AsyncSession):
+async def register(user: User, db: AsyncSession) -> ResponseMessage:
     """
     Register a new user.
 
@@ -16,7 +16,7 @@ async def register(user: User, db: AsyncSession):
         db (AsyncSession): The database session.
 
     Returns:
-        Any: The result of the database transaction.
+        ResponseMessage: The response message.
     """
 
     async def _register():
@@ -36,7 +36,7 @@ async def register(user: User, db: AsyncSession):
         db.add(new_user)
         await db.commit()
         db.refresh(new_user)
-        return MessageResponse(message="User registered successfully")
+        return ResponseMessage(message="User registered successfully")
 
     return await process_db_transaction(
         transaction_func=_register,
