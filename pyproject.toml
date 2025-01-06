@@ -15,4 +15,5 @@ dependencies = [
     "pydantic[mypy]>=2.10.4",
     "asyncpg>=0.30.0",
     "psycopg2-binary>=2.9.10",
+    "passlib>=1.7.4",
 ]

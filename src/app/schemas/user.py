@@ -5,7 +5,7 @@ from pydantic import BaseModel, field_validator, Field, EmailStr
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,30}$"
 
 
-class User(BaseModel):
+class UserProfile(BaseModel):
     """'
     A Pydantic model for user registration.
 
@@ -36,6 +36,23 @@ class User(BaseModel):
         if 5 > len(value) > 12:
             raise ValueError("Username must be between 5 and 12 characters long.")
         return value
+
+    class Config:
+        orm_mode = True
+
+
+class UserLogin(BaseModel):
+    """
+    A Pydantic model for user login.
+
+    Attributes:
+        username: str: The user's username.
+        password: str: The user's password.
+
+    """
+
+    username: str = Field(examples=["username_example"])
+    password: str = Field(examples=["Password_123!"])
 
     class Config:
         orm_mode = True
