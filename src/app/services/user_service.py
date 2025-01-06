@@ -1,13 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.user import UserSignup
+from app.schemas.user import UserProfile
 from app.schemas.common.messages import ResponseMessage
-from app.services.utils.processors import process_db_transaction
-from app.services.utils.validators import unique_username, unique_email
+from app.services.utils import processors as p, validators as v, utils as u
 from app.schemas.common.application_error import ApplicationError
 
 
-async def signup(user: UserSignup, db: AsyncSession) -> ResponseMessage:
+async def signup(user: UserProfile, db: AsyncSession) -> ResponseMessage:
     """
     Register a new user.
 
@@ -20,25 +19,30 @@ async def signup(user: UserSignup, db: AsyncSession) -> ResponseMessage:
     """
 
     async def _signup():
-        if not unique_username(user.username, db):
+        if not await v.unique_username(user.username, db):
             raise ApplicationError(
                 status=409,
                 detail="Username already exists",
             )
 
-        if not unique_email(user.email, db):
+        if not await v.unique_email(user.email, db):
             raise ApplicationError(
                 status=409,
                 detail="Email already exists",
             )
 
-        new_user = UserSignup(**user.model_dump())
+        hashed_password = u.hash_password(password=user.password)
+        new_user = UserProfile(**user.model_dump(), exclude={"password"})
+        new_user.password = hashed_password
+
         db.add(new_user)
         await db.commit()
+
         db.refresh(new_user)
+
         return ResponseMessage(message="User registered successfully")
 
-    return await process_db_transaction(
+    return await p.process_db_transaction(
         transaction_func=_signup,
         db=db,
     )

@@ -5,7 +5,7 @@ from pydantic import BaseModel, field_validator, Field, EmailStr
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,30}$"
 
 
-class UserSignup(BaseModel):
+class UserProfile(BaseModel):
     """'
     A Pydantic model for user registration.
 

@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.sql_app.database import get_db
-from app.schemas.user import UserSignup
+from app.schemas.user import UserProfile
 from app.services import user_service
 from app.services.utils.processors import process_request
 
@@ -14,7 +14,7 @@ router = APIRouter()
     "/signup", description="signup a new user", status_code=status.HTTP_201_CREATED
 )
 async def signup(
-    user: UserSignup,
+    user: UserProfile,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     async def _signup():
