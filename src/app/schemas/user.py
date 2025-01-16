@@ -1,4 +1,5 @@
 import re
+from uuid import UUID
 from pydantic import BaseModel, field_validator, Field, EmailStr
 
 
@@ -10,9 +11,9 @@ class UserProfile(BaseModel):
     A Pydantic model for user registration.
 
     Attributes:
-        username: str: The user's username.
-        password: str: The user's password.
-        email: EmailStr: The user's email address.
+        username (str): The user's username.
+        password (str): The user's password.
+        email (EmailStr): The user's email address.
 
     Methods:
         validate_password: Validates the user's password.
@@ -46,8 +47,8 @@ class UserLogin(BaseModel):
     A Pydantic model for user login.
 
     Attributes:
-        username: str: The user's username.
-        password: str: The user's password.
+        username (str): The user's username.
+        password (str): The user's password.
 
     """
 
@@ -56,3 +57,21 @@ class UserLogin(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class UserResponse(BaseModel):
+    """
+    A Pydantic model representing a User entity from the database.
+
+    Attributes:
+        id (UUID): The user's ID.
+        username (str): The user's username.
+        password (str): The user's password.
+        email (str): The user's email.
+
+    """
+
+    id: UUID
+    username: str
+    password: str
+    email: EmailStr
