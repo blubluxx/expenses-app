@@ -7,9 +7,7 @@ def hash_password(password: str) -> str:
     """
     Hashes the given password using bcrypt.
     """
-    hash_password = context.hash(password)
-
-    return hash_password
+    return context.hash(password)
 
 
 def verify_password(password, hashed_password) -> bool:
