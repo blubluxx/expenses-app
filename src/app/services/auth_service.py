@@ -19,7 +19,7 @@ from app.schemas.common.application_error import ApplicationError
 
 settings: Settings = get_settings()
 logger = logging.getLogger(__name__)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login")
 
 
 async def login(login_data: OAuth2PasswordRequestForm, db: AsyncSession) -> Response:

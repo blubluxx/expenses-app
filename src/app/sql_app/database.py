@@ -53,7 +53,7 @@ async def create_tables():
     in the Base class. It binds the metadata to the specified engine and creates
     the tables if they do not already exist.
     """
-    with engine.begin() as conn:
+    async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 
@@ -65,9 +65,10 @@ async def is_database_initialized() -> bool:
         bool: True if tables exist, False otherwise.
     """
     async with engine.connect() as connection:
-        inspector = inspect(connection)
-        tables = await connection.run_sync(inspector.get_table_names)
-        return len(tables) > 0
+        result = await connection.run_sync(
+            lambda sync_connection: inspect(sync_connection).get_table_names()
+        )
+        return len(result) > 0
 
 
 async def initialize_database():
