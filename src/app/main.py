@@ -5,21 +5,21 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.api_v1.api import api_router
-from app.core.config import get_settings
+from app.core.config import get_settings, Settings
 
 from app.sql_app.database import initialize_database
+
+settings: Settings = get_settings()
 
 
 def _setup_cors(app: FastAPI) -> None:
     """
     Set all CORS enabled origins
     """
-    if get_settings().BACKEND_CORS_ORIGINS:
+    if settings.BACKEND_CORS_ORIGINS:
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=[
-                str(origin) for origin in get_settings().BACKEND_CORS_ORIGINS
-            ],
+            allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
@@ -28,15 +28,15 @@ def _setup_cors(app: FastAPI) -> None:
 
 def _create_app() -> FastAPI:
     app_ = FastAPI(
-        title=get_settings().PROJECT_NAME,
-        openapi_url=urljoin(get_settings().API_V1_STR, "openapi.json"),
-        version=get_settings().VERSION,
+        title=settings.PROJECT_NAME,
+        openapi_url=urljoin(settings.API_V1_STR, "openapi.json"),
+        version=settings.VERSION,
         docs_url="/docs",
         lifespan=lifespan,
     )
     app_.include_router(
         api_router,
-        prefix=get_settings().API_V1_STR,
+        prefix=settings.API_V1_STR,
     )
     return app_
 
