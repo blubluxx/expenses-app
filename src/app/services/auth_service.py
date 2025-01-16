@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Union
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, Response, status
@@ -116,17 +116,19 @@ async def _authenticate_user(user: UserLogin, db: AsyncSession) -> UUID:
     Raises:
         HTTPException: If the password is wrong.
     """
-    user: UserResponse = await user_service.get_by_username(
+    user_db: UserResponse = await user_service.get_by_username(
         username=user.username, db=db
     )
-    stored_password: str = user.password
-    if not u.verify_password(password=user.password, hashed_password=stored_password):
+    stored_password: str = user_db.password
+    if not u.verify_password(
+        password=user_db.password, hashed_password=stored_password
+    ):
         logger.error(msg="Passwords do not match")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password"
         )
 
-    return user.id
+    return user_db.id
 
 
 def _create_access_token(data: dict) -> Token:
@@ -161,12 +163,12 @@ def _create_access_token(data: dict) -> Token:
         )
 
 
-def _verify_access_token(token: Token) -> dict[str, Any]:
+def _verify_access_token(token: str) -> dict[str, Any]:
     """
     Verifies the provided JWT access token.
 
     Args:
-        token (Token): The JWT access token to be verified.
+        token (str): The JWT access token to be verified.
 
     Returns:
         dict[str, Any]: The decoded payload of the token if verification is successful.
@@ -176,7 +178,7 @@ def _verify_access_token(token: Token) -> dict[str, Any]:
     """
     try:
         payload = jwt.decode(
-            token.access_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
 
         logger.info("Decoded token payload")
@@ -212,7 +214,7 @@ async def get_current_user(
         HTTPException: If the token is invalid or the user does not exist.
     """
     payload: dict = _verify_access_token(token)
-    user_id: str = payload.get("sub")
+    user_id: Union[Any, None] = payload.get("sub")
 
     user: UserResponse = await user_service.get_by_id(user_id=UUID(user_id), db=db)
 

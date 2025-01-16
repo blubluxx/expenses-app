@@ -18,9 +18,9 @@ async def signup(
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     async def _signup():
-        await user_service.signup(user, db)
+        return await user_service.signup(user, db)
 
-    return process_request(
+    return await process_request(
         get_entities_fn=_signup,
         status_code=status.HTTP_201_CREATED,
         not_found_err_msg="Could not register user",

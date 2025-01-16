@@ -1,4 +1,5 @@
 import logging
+from typing import Any, Coroutine, Union
 from uuid import UUID
 
 from sqlalchemy import select
@@ -40,7 +41,7 @@ async def signup(user: UserProfile, db: AsyncSession) -> ResponseMessage:
             )
 
         hashed_password = u.hash_password(password=user.password)
-        new_user = UserProfile(**user.model_dump(), exclude={"password"})
+        new_user = User(**user.model_dump(exclude={"password"}))
         new_user.password = hashed_password
 
         db.add(new_user)
@@ -71,9 +72,9 @@ async def get_by_username(username: str, db: AsyncSession) -> UserResponse:
         ApplicationError: If the user is not found.
     """
 
-    user: User = await (
-        db.execute(select(User).filter(User.username == username)).scalars().first()
-    )
+    result = await db.execute(select(User).filter(User.username == username))
+    user: Union[User, None] = result.scalars().first()
+
     if user is None:
         logger.error(msg=f"No user with username {username} found")
 
@@ -103,9 +104,9 @@ async def get_by_id(user_id: UUID, db: AsyncSession) -> UserResponse:
         ApplicationError: If the user is not found.
     """
 
-    user: User = (
-        await db.execute(select(User).filter(User.id == user_id)).scalars().first()
-    )
+    result = await db.execute(select(User).filter(User.id == user_id))
+    user: Union[User, None] = result.scalars().first()
+
     if user is None:
         logger.error(msg=f"No user with user_id {user_id} found")
 
