@@ -10,6 +10,9 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     API_V1_STR: str
     DATABASE_URL: str
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
 
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
     VERSION: str = "9.9.9.9"
