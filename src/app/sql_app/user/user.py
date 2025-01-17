@@ -43,6 +43,7 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     expenses: Mapped[list["Expense"]] = relationship(
         "Expense", back_populates="user", uselist=True, collection_class=list

@@ -1,7 +1,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, func
+from sqlalchemy import ForeignKey, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -26,6 +26,11 @@ class ExpenseName(Base):
     """
 
     __tablename__ = "expense_name"
+    __table_args__ = (
+        UniqueConstraint(
+            "name", "category_id", name="unique_expense_name_per_category"
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -43,5 +48,5 @@ class ExpenseName(Base):
         "Category", back_populates="expense_names"
     )
     expenses: Mapped[list["Expense"]] = relationship(
-        "Expense", back_populates="expense_name", uselist=True, collection_class=list
+        "Expense", back_populates="name", uselist=True, collection_class=list
     )
