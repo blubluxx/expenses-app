@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Coroutine, Union
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy import select
