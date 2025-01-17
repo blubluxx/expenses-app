@@ -69,6 +69,7 @@ class UserResponse(BaseModel):
         password (str): The user's password.
         email (str): The user's email.
         is_admin (bool): A boolean indicating if the user is an admin.
+        is_deleted (bool): A boolean indicating if the user is deleted.
     """
 
     id: UUID
@@ -76,3 +77,7 @@ class UserResponse(BaseModel):
     password: str
     email: EmailStr
     is_admin: bool
+    is_deleted: bool | None = None
+
+    class Config:
+        from_attributes = True

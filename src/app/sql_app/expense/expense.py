@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -53,7 +53,7 @@ class Expense(Base):
         server_onupdate=func.now(),
         nullable=False,
     )
-    is_deleted: Mapped[bool] = mapped_column(String, nullable=False, default=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     name: Mapped["ExpenseName"] = relationship("ExpenseName", back_populates="expenses")
     user: Mapped["User"] = relationship("User", back_populates="expenses")
