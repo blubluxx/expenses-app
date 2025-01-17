@@ -15,7 +15,7 @@ from app.schemas.user import UserLogin, UserResponse
 from app.schemas.common.common import Token
 from app.services.utils import utils as u, validators as v, processors as p
 from app.services import user_service
-from app.schemas.common.application_error import ApplicationError
+
 
 settings: Settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -55,9 +55,10 @@ async def logout(request: Request) -> Response:
         Response: The HTTP response object with cookies deleted.
     """
     try:
+        request.cookies.clear()
         response = JSONResponse({"msg": "Logged out."})
         response.delete_cookie(
-            key="access_token",
+            key="token",
             httponly=True,
             secure=True,
             samesite="none",
@@ -198,7 +199,7 @@ def _verify_access_token(token: str) -> dict[str, Any]:
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
+    request: Request, db: AsyncSession = Depends(get_db)
 ) -> UserResponse:
     """
     Retrieve the current user based on the provided access token.
@@ -213,6 +214,14 @@ async def get_current_user(
     Raises:
         HTTPException: If the token is invalid or the user does not exist.
     """
+    token: Union[str, None] = request.cookies.get("token")
+    if not token:
+        logger.error(msg="Token not found in cookies")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User is not authenitcated",
+        )
+
     payload: dict = _verify_access_token(token)
     user_id: Union[Any, None] = payload.get("sub")
 
