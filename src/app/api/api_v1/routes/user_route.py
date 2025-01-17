@@ -53,7 +53,7 @@ async def get_all(
     description="Update user role",
     dependencies=[Depends(auth_service.require_admin_role)],
 )
-async def change_ser_role(
+async def change_user_role(
     id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
