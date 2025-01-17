@@ -19,4 +19,4 @@ def verify_password(password, hashed_password) -> bool:
     Returns:
         bool: True if the password is correct, False otherwise.
     """
-    return argon2.verify(password, hashed_password)
+    return not argon2.verify(password, hashed_password)
