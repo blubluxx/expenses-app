@@ -29,7 +29,9 @@ async def login(
     "/logout",
     description="Logs out the current user by invalidating their existing tokens.",
 )
-async def logout(request: Request) -> Response:
+async def logout(
+    request: Request, token: str = Depends(auth_service.oauth2_scheme)
+) -> Response:
     response = await auth_service.logout(request=request)
     response.status_code = status.HTTP_200_OK
     return response
