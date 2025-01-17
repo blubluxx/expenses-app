@@ -109,8 +109,7 @@ async def get_by_id(user_id: UUID, db: AsyncSession) -> UserResponse:
         ApplicationError: If the user is not found.
     """
 
-    result = await db.execute(select(User).filter(User.id == user_id))
-    user: Union[User, None] = result.scalars().first()
+    user: Union[User, None] = await _get_db_user_by_id(user_id=user_id, db=db)
 
     if user is None:
         logger.error(msg=f"No user with user_id {user_id} found")
@@ -173,7 +172,7 @@ async def change_user_role(user_id: UUID, db: AsyncSession) -> ResponseMessage:
     """
 
     async def _change_user_role():
-        user = await get_by_id(user_id=user_id, db=db)
+        user: Union[User, None] = await _get_db_user_by_id(user_id=user_id, db=db)
         user.is_admin = not user.is_admin
 
         await db.commit()
@@ -184,3 +183,20 @@ async def change_user_role(user_id: UUID, db: AsyncSession) -> ResponseMessage:
         transaction_func=_change_user_role,
         db=db,
     )
+
+
+async def _get_db_user_by_id(user_id: UUID, db: AsyncSession) -> Union[User, None]:
+    """
+    Fetches a User entity from the database.
+
+    Args:
+        user_id (UUID): The user's ID.
+        db (AsyncSession): The database session.
+
+    Returns:
+        User | None: The User entity or None.
+    """
+    result = await db.execute(select(User).filter(User.id == user_id))
+    user: Union[User, None] = result.scalars().first()
+
+    return user
