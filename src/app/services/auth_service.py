@@ -19,7 +19,7 @@ from app.schemas.common.application_error import ApplicationError
 
 settings: Settings = get_settings()
 logger = logging.getLogger(__name__)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 async def login(login_data: OAuth2PasswordRequestForm, db: AsyncSession) -> Response:
@@ -217,5 +217,18 @@ async def get_current_user(
     user_id: Union[Any, None] = payload.get("sub")
 
     user: UserResponse = await user_service.get_by_id(user_id=UUID(user_id), db=db)
+
+    return user
+
+
+async def require_admin_role(
+    user: UserResponse = Depends(get_current_user),
+) -> UserResponse:
+    if not user.is_admin:
+        logger.error(msg="User does not have admin role")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. User does not have admin role.",
+        )
 
     return user
