@@ -86,7 +86,11 @@ async def get_by_username(username: str, db: AsyncSession) -> UserResponse:
 
     logger.info(msg="Fetched user")
     return UserResponse(
-        id=user.id, username=user.username, password=user.password, email=user.email
+        id=user.id,
+        username=user.username,
+        password=user.password,
+        email=user.email,
+        is_admin=user.is_admin,
     )
 
 
@@ -118,5 +122,65 @@ async def get_by_id(user_id: UUID, db: AsyncSession) -> UserResponse:
 
     logger.info(msg="Fetched user")
     return UserResponse(
-        id=user.id, username=user.username, password=user.password, email=user.email
+        id=user.id,
+        username=user.username,
+        password=user.password,
+        email=user.email,
+        is_admin=user.is_admin,
+    )
+
+
+async def get_all(
+    db: AsyncSession, offset: int = 0, limit: int = 10
+) -> list[UserResponse]:
+    """
+    Returns a list of all users in the database.
+
+    Args:
+        db (AsyncSession): The database session.
+        offset (int): The offset.
+        limit (int): The limit.
+
+    Returns:
+        list[UserResponse]: A list of all users in the database.
+    """
+
+    result = await db.execute(select(User).offset(offset).limit(limit))
+    users = result.scalars().all()
+
+    return [
+        UserResponse(
+            id=user.id,
+            username=user.username,
+            password=user.password,
+            email=user.email,
+            is_admin=user.is_admin,
+        )
+        for user in users
+    ]
+
+
+async def change_user_role(user_id: UUID, db: AsyncSession) -> ResponseMessage:
+    """
+    Change a user's role.
+
+    Args:
+        user_id (UUID): The user's ID.
+        db (AsyncSession): The database session.
+
+    Returns:
+        ResponseMessage: The response message.
+    """
+
+    async def _change_user_role():
+        user = await get_by_id(user_id=user_id, db=db)
+        user.is_admin = not user.is_admin
+
+        await db.commit()
+
+        return ResponseMessage(message="User role updated successfully")
+
+    return await p.process_db_transaction(
+        transaction_func=_change_user_role,
+        db=db,
     )

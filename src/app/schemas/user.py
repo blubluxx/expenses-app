@@ -68,10 +68,11 @@ class UserResponse(BaseModel):
         username (str): The user's username.
         password (str): The user's password.
         email (str): The user's email.
-
+        is_admin (bool): A boolean indicating if the user is an admin.
     """
 
     id: UUID
     username: str
     password: str
     email: EmailStr
+    is_admin: bool
