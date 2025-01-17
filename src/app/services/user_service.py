@@ -158,3 +158,29 @@ async def get_all(
         )
         for user in users
     ]
+
+
+async def change_user_role(user_id: UUID, db: AsyncSession) -> ResponseMessage:
+    """
+    Change a user's role.
+
+    Args:
+        user_id (UUID): The user's ID.
+        db (AsyncSession): The database session.
+
+    Returns:
+        ResponseMessage: The response message.
+    """
+
+    async def _change_user_role():
+        user = await get_by_id(user_id=user_id, db=db)
+        user.is_admin = not user.is_admin
+
+        await db.commit()
+
+        return ResponseMessage(message="User role updated successfully")
+
+    return await p.process_db_transaction(
+        transaction_func=_change_user_role,
+        db=db,
+    )

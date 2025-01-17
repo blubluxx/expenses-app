@@ -46,3 +46,22 @@ async def get_all(
         status_code=status.HTTP_200_OK,
         not_found_err_msg="Could not fetch users",
     )
+
+
+@router.patch(
+    "/{user_id}/role",
+    description="Update user role",
+    dependencies=[Depends(auth_service.require_admin_role)],
+)
+async def change_ser_role(
+    id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    async def _change_user_role():
+        return await user_service.change_user_role(user_id=id, db=db)
+
+    return await process_request(
+        get_entities_fn=_change_user_role,
+        status_code=status.HTTP_200_OK,
+        not_found_err_msg="Could not change user role",
+    )
