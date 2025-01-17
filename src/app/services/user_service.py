@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import status
 
-from app.schemas.user import UserProfile, UserResponse
+from app.schemas.user import UserRegistration, UserResponse
 from app.schemas.common.messages import ResponseMessage
 from app.services.utils import processors as p, validators as v, utils as u
 from app.schemas.common.application_error import ApplicationError
@@ -15,12 +15,12 @@ from app.sql_app.user.user import User
 logger = logging.getLogger(__name__)
 
 
-async def signup(user: UserProfile, db: AsyncSession) -> ResponseMessage:
+async def signup(user: UserRegistration, db: AsyncSession) -> ResponseMessage:
     """
     Register a new user.
 
     Args:
-        user (User): The user to register.
+        user (UserRegistration): The user to register.
         db (AsyncSession): The database session.
 
     Returns:
@@ -41,8 +41,9 @@ async def signup(user: UserProfile, db: AsyncSession) -> ResponseMessage:
             )
 
         hashed_password = u.hash_password(password=user.password)
-        new_user = User(**user.model_dump(exclude={"password"}))
-        new_user.password = hashed_password
+        new_user = User(
+            **user.model_dump(exclude={"password"}), password=hashed_password
+        )
 
         db.add(new_user)
         await db.commit()
