@@ -4,7 +4,7 @@ from functools import lru_cache
 from typing import List, Optional, Union
 
 from pydantic import field_validator, AnyHttpUrl
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -30,11 +30,11 @@ class Settings(BaseSettings):
     PYDEVD_PORT: Optional[int] = None
     PYDEVD_HOST: Optional[str] = None
 
-    class Config:
-        case_sensitive = True
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        allow_extra = True
+    # class Config:
+    #     case_sensitive = True
+    #     allow_extra = True
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
 @lru_cache()

@@ -13,7 +13,10 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "pydantic[email,mypy]>=2.10.4",
     "asyncpg>=0.30.0",
-    "passlib>=1.7.4",
+    "passlib[argon2]>=1.7.4",
     "python-jose[cryptography]>=3.3.0",
     "bcrypt>=4.2.1",
+    "python-multipart>=0.0.20",
+    "types-python-jose>=3.3.4.20240106",
+    "types-passlib>=1.7.7.20241221",
 ]

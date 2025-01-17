@@ -7,9 +7,10 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "src.run_server:app",
+                "app.main:app",
                 "--reload"
             ],
+            "cwd": "${workspaceFolder}/src",
             "justMyCode": true,
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src:${workspaceFolder}/tests"

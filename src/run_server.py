@@ -23,7 +23,7 @@ if __name__ == "__main__":
         "-p",
         "--port",
         type=int,
-        default=8080,
+        default=8000,
         help="port to listen on (default: 8080)",
     )
     config = parser.parse_args()
@@ -35,6 +35,7 @@ if __name__ == "__main__":
         "app.main:app",
         host="0.0.0.0",
         port=config.port,
-        reload=reload_enabled,
+        # reload=reload_enabled,
+        reload=True,
         reload_dirs=reload_dirs,
     )

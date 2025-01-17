@@ -1,13 +1,11 @@
-from passlib.context import CryptContext
-
-context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from passlib.hash import argon2
 
 
 def hash_password(password: str) -> str:
     """
     Hashes the given password using bcrypt.
     """
-    return context.hash(password)
+    return argon2.hash(password)
 
 
 def verify_password(password, hashed_password) -> bool:
@@ -21,4 +19,4 @@ def verify_password(password, hashed_password) -> bool:
     Returns:
         bool: True if the password is correct, False otherwise.
     """
-    return context.verify(password, hashed_password)
+    return not argon2.verify(password, hashed_password)

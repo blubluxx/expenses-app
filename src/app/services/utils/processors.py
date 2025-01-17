@@ -2,7 +2,7 @@ import logging
 from typing import Callable, Any
 
 from fastapi import status
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
@@ -16,7 +16,7 @@ async def process_request(
     get_entities_fn: Callable,
     status_code: int,
     not_found_err_msg: str,
-) -> JSONResponse | RedirectResponse:
+) -> JSONResponse:
     """
     Asynchronously processes a request by calling the provided function to get entities and returns an appropriate response.
 
@@ -26,7 +26,7 @@ async def process_request(
         not_found_err_msg (str): The error message to log if a TypeError occurs.
 
     Returns:
-        JSONResponse | RedirectResponse: A JSON response with the formatted data or a redirect response.
+        JSONResponse: A JSON response with the formatted data or a redirect response.
 
     Raises:
         ApplicationError: If an application-specific error occurs.
@@ -35,9 +35,6 @@ async def process_request(
     """
     try:
         response = await get_entities_fn()
-
-        if isinstance(response, RedirectResponse):
-            return response
 
         formatted_response = _format_response(response)
 
@@ -88,7 +85,7 @@ async def process_db_transaction(transaction_func: Callable, db: AsyncSession) -
         await db.rollback()
         logger.error(f"Unexpected DB error: {str(e)}")
         raise ApplicationError(
-            detail="Internal server error",
+            detail=f"{str(e)}",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
