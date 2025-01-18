@@ -63,7 +63,7 @@ async def logout(request: Request) -> Response:
             secure=True,
             samesite="none",
         )
-
+        logger.info(msg="Deleted cookie")
         return response
     except KeyError as e:
         raise HTTPException(
