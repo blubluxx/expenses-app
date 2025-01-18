@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select
@@ -9,7 +9,7 @@ from fastapi import status
 from app.schemas.category import CategoryResponse
 from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseNameDTO
 from app.services import category_service
-from app.services.utils import validators as v, utils as u, processors as p
+from app.services.utils import validators as v, processors as p
 from app.schemas.common.application_error import ApplicationError
 from app.sql_app.expense.expense import Expense
 from app.sql_app.expense_name.expense_name import ExpenseName
@@ -36,7 +36,7 @@ async def get_user_expenses(user_id: UUID, db: AsyncSession) -> list[ExpenseResp
         )
 
     user_expenses = await db.execute(select(Expense).filter(Expense.user_id == user_id))
-    expenses: list[Expense] = user_expenses.scalars().all() or []  # type: ignore
+    expenses: list[Expense] = user_expenses.scalars().unique() or []  # type: ignore
     logger.info(f"Fetched all expenses for user: {user_id}")
 
     return [
