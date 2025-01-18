@@ -1,5 +1,5 @@
 import logging
-from typing import Union
+from typing import Optional, Union
 from uuid import UUID
 
 from sqlalchemy import select
@@ -28,27 +28,16 @@ async def signup(user: UserRegistration, db: AsyncSession) -> ResponseMessage:
     """
 
     async def _signup():
-        if not await v.unique_username(user.username, db):
-            raise ApplicationError(
-                status=409,
-                detail="Username already exists",
-            )
-
-        if not await v.unique_email(user.email, db):
-            raise ApplicationError(
-                status=409,
-                detail="Email already exists",
-            )
-
+        await _validate_data(user=user, db=db)
         hashed_password = u.hash_password(password=user.password)
+
         new_user = User(
             **user.model_dump(exclude={"password"}), password=hashed_password
         )
 
         db.add(new_user)
         await db.commit()
-
-        db.refresh(new_user)
+        await db.refresh(new_user)
 
         return ResponseMessage(message="User registered successfully")
 
@@ -56,6 +45,30 @@ async def signup(user: UserRegistration, db: AsyncSession) -> ResponseMessage:
         transaction_func=_signup,
         db=db,
     )
+
+
+async def _validate_data(user: UserRegistration, db: AsyncSession) -> None:
+    """
+    Validate if user username and email are unique.
+
+    Args:
+        user (UserRegistration): The user to validate.
+        db (AsyncSession): The database session.
+
+    Raises:
+        ApplicationError: If the username or email already exists.
+    """
+    if not await v.unique_username(user.username, db):
+        raise ApplicationError(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username already exists",
+        )
+
+    if not await v.unique_email(user.email, db):
+        raise ApplicationError(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already exists",
+        )
 
 
 async def get_by_username(username: str, db: AsyncSession) -> UserResponse:
@@ -74,7 +87,7 @@ async def get_by_username(username: str, db: AsyncSession) -> UserResponse:
     """
 
     result = await db.execute(select(User).filter(User.username == username))
-    user: Union[User, None] = result.scalars().first()
+    user: Optional[User] = result.scalars().first()
 
     if user is None:
         logger.error(msg=f"No user with username {username} found")
@@ -109,7 +122,7 @@ async def get_by_id(user_id: UUID, db: AsyncSession) -> UserResponse:
         ApplicationError: If the user is not found.
     """
 
-    user: Union[User, None] = await _get_db_user_by_id(user_id=user_id, db=db)
+    user: Optional[User] = await _get_db_user_by_id(user_id=user_id, db=db)
 
     if user is None:
         logger.error(msg=f"No user with user_id {user_id} found")
@@ -145,7 +158,7 @@ async def get_all(
     """
 
     result = await db.execute(select(User).offset(offset).limit(limit))
-    users = result.scalars().all()
+    users: list[User] = result.scalars().all() or []  # type: ignore
 
     return [
         UserResponse(
@@ -169,12 +182,20 @@ async def change_user_role(user_id: UUID, db: AsyncSession) -> ResponseMessage:
 
     Returns:
         ResponseMessage: The response message.
+
+    Raises:
+        ApplicationError: If the user is not found.
     """
 
     async def _change_user_role():
-        user: Union[User, None] = await _get_db_user_by_id(user_id=user_id, db=db)
-        user.is_admin = not user.is_admin
+        user: Optional[User] = await _get_db_user_by_id(user_id=user_id, db=db)
+        if user is None:
+            raise ApplicationError(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
 
+        user.is_admin = not user.is_admin
         await db.commit()
 
         return ResponseMessage(message="User role updated successfully")
@@ -185,7 +206,7 @@ async def change_user_role(user_id: UUID, db: AsyncSession) -> ResponseMessage:
     )
 
 
-async def _get_db_user_by_id(user_id: UUID, db: AsyncSession) -> Union[User, None]:
+async def _get_db_user_by_id(user_id: UUID, db: AsyncSession) -> Optional[User]:
     """
     Fetches a User entity from the database.
 
@@ -197,6 +218,6 @@ async def _get_db_user_by_id(user_id: UUID, db: AsyncSession) -> Union[User, Non
         User | None: The User entity or None.
     """
     result = await db.execute(select(User).filter(User.id == user_id))
-    user: Union[User, None] = result.scalars().first()
+    user: Optional[User] = result.scalars().first()
 
     return user
