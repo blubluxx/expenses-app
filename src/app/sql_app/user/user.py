@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.sql_app.database import Base
 
 if TYPE_CHECKING:
-    from app.sql_app import Expense
+    from app.sql_app import Expense, ExpenseName
 
 
 class User(Base):
@@ -47,4 +47,7 @@ class User(Base):
 
     expenses: Mapped[list["Expense"]] = relationship(
         "Expense", back_populates="user", uselist=True, collection_class=list
+    )
+    expense_names: Mapped[list["ExpenseName"]] = relationship(
+        "ExpenseName", back_populates="user", uselist=True, collection_class=list
     )

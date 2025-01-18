@@ -10,4 +10,4 @@ api_router = APIRouter()
 
 api_router.include_router(user_route.router, prefix="/users", tags=["Users"])
 api_router.include_router(auth_route.router, prefix="/auth", tags=["Authentication"])
-api_router.include_router(auth_route.router, prefix="/expenses", tags=["Expenses"])
+api_router.include_router(expense_route.router, prefix="/expenses", tags=["Expenses"])

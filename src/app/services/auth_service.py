@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Union
+from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, Response, status
@@ -214,7 +214,7 @@ async def get_current_user(
     Raises:
         HTTPException: If the token is invalid or the user does not exist.
     """
-    token: Union[str, None] = request.cookies.get("token")
+    token: Optional[str] = request.cookies.get("token")
     if not token:
         logger.error(msg="Token not found in cookies")
         raise HTTPException(
@@ -223,7 +223,7 @@ async def get_current_user(
         )
 
     payload: dict = _verify_access_token(token)
-    user_id: Union[Any, None] = payload.get("sub")
+    user_id: Optional[Any] = payload.get("sub")
 
     user: UserResponse = await user_service.get_by_id(user_id=UUID(user_id), db=db)
 
