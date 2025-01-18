@@ -25,6 +25,7 @@ async def create_category(name: str, db: AsyncSession) -> CategoryResponse:
 
     async def _create_category():
         category = Category(name=name)
+        logger.info(f"Creating category: {category.name}")
         db.add(category)
         await db.commit()
         await db.refresh(category)
@@ -53,6 +54,7 @@ async def get_by_name(name: str, db: AsyncSession) -> Optional[CategoryResponse]
     """
     result = await db.execute(select(Category).filter(Category.name == name))
     category: Optional[Category] = result.scalars().first()
+    logger.info(f"Fetched category: {category.name if category else None}")
 
     return (
         CategoryResponse(

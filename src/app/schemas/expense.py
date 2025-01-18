@@ -36,8 +36,8 @@ class ExpenseResponse(BaseModel):
     def created_at(cls, value) -> str:
         return value.strftime("%d-%m-%Y %H:%M")
 
-    @field_validator("name")
-    def ensure_name_is_string(cls, value) -> str:
+    @field_validator("name", mode="before")
+    def name(cls, value) -> str:
         return value.name if isinstance(value, ExpenseName) else value
 
 

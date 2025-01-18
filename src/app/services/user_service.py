@@ -34,7 +34,7 @@ async def signup(user: UserRegistration, db: AsyncSession) -> ResponseMessage:
         new_user = User(
             **user.model_dump(exclude={"password"}), password=hashed_password
         )
-
+        logger.info(f"Registering user: {new_user.id}")
         db.add(new_user)
         await db.commit()
         await db.refresh(new_user)
@@ -159,7 +159,7 @@ async def get_all(
 
     result = await db.execute(select(User).offset(offset).limit(limit))
     users: list[User] = result.scalars().all() or []  # type: ignore
-
+    logger.info(msg="Fetched all users")
     return [
         UserResponse(
             id=user.id,
@@ -196,6 +196,7 @@ async def change_user_role(user_id: UUID, db: AsyncSession) -> ResponseMessage:
             )
 
         user.is_admin = not user.is_admin
+        logger.info(f"Changing is_admin for user {user.id} to {user.is_admin}")
         await db.commit()
 
         return ResponseMessage(message="User role updated successfully")
@@ -219,5 +220,5 @@ async def _get_db_user_by_id(user_id: UUID, db: AsyncSession) -> Optional[User]:
     """
     result = await db.execute(select(User).filter(User.id == user_id))
     user: Optional[User] = result.scalars().first()
-
+    logger.info(f"Fetched user: {user.id if user else None}")
     return user

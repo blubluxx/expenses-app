@@ -1,9 +1,13 @@
+import logging
 from typing import Optional
 from uuid import UUID
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.sql_app.user.user import User
+
+logger = logging.getLogger(__name__)
 
 
 async def unique_username(username: str, db: AsyncSession) -> bool:
@@ -19,6 +23,7 @@ async def unique_username(username: str, db: AsyncSession) -> bool:
     """
     result = await db.execute(select(User).filter(User.username == username))
     user: Optional[User] = result.scalars().first()
+    logger.info(f"Fetched user: {user.username if user else None}")
     return user is None
 
 
@@ -51,4 +56,5 @@ async def user_exists(user_id: UUID, db: AsyncSession) -> bool:
     """
     result = await db.execute(select(User).filter(User.id == user_id))
     user: Optional[User] = result.scalars().first()
+    logger.info(f"Fetched user: {user.id if user else None}")
     return user is not None

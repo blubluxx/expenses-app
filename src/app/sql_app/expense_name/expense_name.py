@@ -55,5 +55,9 @@ class ExpenseName(Base):
         "Category", back_populates="expense_names"
     )
     expenses: Mapped[list["Expense"]] = relationship(
-        "Expense", back_populates="name", uselist=True, collection_class=list
+        "Expense",
+        back_populates="name",
+        uselist=True,
+        collection_class=list,
+        lazy="joined",
     )

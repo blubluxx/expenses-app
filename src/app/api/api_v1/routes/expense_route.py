@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 @router.get(
-    "/users/{user_id}",
+    "/",
     status_code=status.HTTP_200_OK,
 )
 async def get_user_expenses(
@@ -35,7 +35,7 @@ async def get_user_expenses(
 
 
 @router.post(
-    "/users/{user_id}",
+    "/",
     status_code=status.HTTP_201_CREATED,
 )
 async def create_expense(

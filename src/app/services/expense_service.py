@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select
@@ -9,7 +9,7 @@ from fastapi import status
 from app.schemas.category import CategoryResponse
 from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseNameDTO
 from app.services import category_service
-from app.services.utils import validators as v, utils as u, processors as p
+from app.services.utils import validators as v, processors as p
 from app.schemas.common.application_error import ApplicationError
 from app.sql_app.expense.expense import Expense
 from app.sql_app.expense_name.expense_name import ExpenseName
@@ -29,13 +29,15 @@ async def get_user_expenses(user_id: UUID, db: AsyncSession) -> list[ExpenseResp
         List[ExpenseResponse]: A list of expenses for the user.
     """
     if not await v.user_exists(user_id=user_id, db=db):
+        logger.error(f"User not found: {user_id}")
         raise ApplicationError(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found.",
         )
 
     user_expenses = await db.execute(select(Expense).filter(Expense.user_id == user_id))
-    expenses: list[Expense] = user_expenses.scalars().all() or []  # type: ignore
+    expenses: list[Expense] = user_expenses.scalars().unique() or []  # type: ignore
+    logger.info(f"Fetched all expenses for user: {user_id}")
 
     return [
         ExpenseResponse(
@@ -71,6 +73,7 @@ async def create_expense(
         expense_name: ExpenseNameDTO = await _get_expense_name(
             user_id=user_id, expense=expense, category=category, db=db
         )
+        logger.info(f"Fetched expense_name: {expense_name}")
         new_expense: ExpenseResponse = await _create_expense(
             expense=expense, expense_name=expense_name, db=db
         )
@@ -131,6 +134,7 @@ async def _create_expense(
             amount=expense.amount,
             date=expense.date,
         )
+        logger.info(f"Creating expense: {new_expense.id}")
         db.add(new_expense)
         await db.commit()
         await db.refresh(new_expense)
@@ -162,6 +166,7 @@ async def _find_expense_name(name: str, db: AsyncSession) -> Optional[ExpenseNam
 
     result = await db.execute(select(ExpenseName).filter(ExpenseName.name == name))
     expense_name: Optional[ExpenseName] = result.scalars().first()
+    logger.info(f"Fetched expense_name: {expense_name}")
     return (
         ExpenseNameDTO(
             id=expense_name.id,
@@ -194,6 +199,7 @@ async def _create_expense_name(
         new_expense_name = ExpenseName(
             category_id=category_id, user_id=user_id, name=name
         )
+        logger.info(f"Creating expense_name: {new_expense_name.name}")
         db.add(new_expense_name)
         await db.commit()
         await db.refresh(new_expense_name)
@@ -225,6 +231,7 @@ async def _validate_data(
         CategoryResponse: The category of the expense.
     """
     if not await v.user_exists(user_id=user_id, db=db):
+        logger.error(f"User not found: {user_id}")
         raise ApplicationError(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found.",

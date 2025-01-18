@@ -55,5 +55,7 @@ class Expense(Base):
     )
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    name: Mapped["ExpenseName"] = relationship("ExpenseName", back_populates="expenses")
+    name: Mapped["ExpenseName"] = relationship(
+        "ExpenseName", back_populates="expenses", lazy="joined"
+    )
     user: Mapped["User"] = relationship("User", back_populates="expenses")
