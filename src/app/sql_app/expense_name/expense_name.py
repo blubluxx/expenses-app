@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.sql_app.database import Base
 
 if TYPE_CHECKING:
-    from app.sql_app import Expense, Category
+    from app.sql_app import Expense, Category, User
 
 
 class ExpenseName(Base):
@@ -28,7 +28,10 @@ class ExpenseName(Base):
     __tablename__ = "expense_name"
     __table_args__ = (
         UniqueConstraint(
-            "name", "category_id", name="unique_expense_name_per_category"
+            "name",
+            "category_id",
+            "user_id",
+            name="unique_expense_name_per_user_and_category",
         ),
     )
 
@@ -42,8 +45,12 @@ class ExpenseName(Base):
     category_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("category.id"), nullable=False
     )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("user.id"), nullable=False
+    )
     name: Mapped[str] = mapped_column(nullable=False, unique=True)
 
+    user: Mapped["User"] = relationship("User", back_populates="expense_names")
     category: Mapped["Category"] = relationship(
         "Category", back_populates="expense_names"
     )
