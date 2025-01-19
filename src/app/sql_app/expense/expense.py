@@ -18,10 +18,13 @@ class Expense(Base):
 
     Attributes:
         id (uuid.UUID): Unique identifier for the expense.
-        expense_name_id (uuid.UUID): Identifier for the associated expense name.
+        name_id (uuid.UUID): Identifier for the associated expense name.
         user_id (uuid.UUID): Identifier for the associated user.
+        date (datetime): Date when the expense was incurred.
+        amount (float): Amount of the expense.
         created_at (datetime): Timestamp when the expense was created.
         updated_at (datetime): Timestamp when the expense was last updated.
+        is_deleted (bool): Flag indicating if the expense has been
 
     Relationships:
         expense_name (ExpenseName): The name of the expense.
