@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.user import UserResponse
 from app.sql_app.database import get_db
-from app.schemas.expense import ExpenseCreate
+from app.schemas.expense import ExpenseCreate, ExpenseUpdate
 from app.services import expense_service
 from app.services import auth_service
 from app.services.utils.processors import process_request
@@ -70,6 +70,28 @@ async def delete_expense(
 
     return await process_request(
         get_entities_fn=_delete_expense,
+        status_code=status.HTTP_200_OK,
+        not_found_err_msg="Expense not found.",
+    )
+
+
+@router.put(
+    "/{expense_id}",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(auth_service.get_current_user)],
+)
+async def update_expense(
+    expense_id: UUID,
+    expense: ExpenseUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    async def _update_expense():
+        return await expense_service.update_expense(
+            expense_id=expense_id, expense_update=expense, db=db
+        )
+
+    return await process_request(
+        get_entities_fn=_update_expense,
         status_code=status.HTTP_200_OK,
         not_found_err_msg="Expense not found.",
     )

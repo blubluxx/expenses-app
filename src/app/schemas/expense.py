@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 from dateutil import parser
 
@@ -22,22 +23,27 @@ class ExpenseResponse(BaseModel):
     id: UUID
     name: str
     amount: float
-    date: datetime
-    created_at: datetime
+    date: str
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
     class Config:
         from_attributes = True
 
-    @field_validator("date")
-    def date(cls, value) -> str:
+    @field_validator("date", mode="before")
+    def date_to_str(cls, value) -> str:
         return value.strftime("%d-%m-%Y %H:%M")
 
-    @field_validator("created_at")
-    def created_at(cls, value) -> str:
+    @field_validator("created_at", mode="before")
+    def created_at_to_str(cls, value) -> str:
+        return value.strftime("%d-%m-%Y %H:%M")
+
+    @field_validator("updated_at", mode="before")
+    def updated_at_to_str(cls, value) -> str:
         return value.strftime("%d-%m-%Y %H:%M")
 
     @field_validator("name", mode="before")
-    def name(cls, value) -> str:
+    def name_to_str(cls, value) -> str:
         return value.name if isinstance(value, ExpenseName) else value
 
 
@@ -54,7 +60,7 @@ class ExpenseCreate(BaseModel):
 
     name: str = Field(examples=["Expense name"])
     amount: float = Field(gt=0, examples=[100.0])
-    date: str = Field(
+    date: datetime = Field(
         examples=["01/01/2022 12:00"], description="24h format is assumed"
     )
     category: str = Field(examples=["Category name"])
@@ -62,7 +68,37 @@ class ExpenseCreate(BaseModel):
     class Config:
         from_attributes = True
 
-    @field_validator("date")
+    @field_validator("date", mode="before")
+    def date_from_string(cls, date_str: str) -> datetime:
+        """
+        Converts a date <str> in the format d/m/y (passed as decimals) to a <datetime> object
+        """
+
+        return parser.parse(date_str)
+
+
+class ExpenseUpdate(BaseModel):
+    """
+    A Pydantic model for updating an expense.
+
+    Attributes:
+        name (str | None): The name of the expense to be updated.
+        amount (float | None): The amount of the expense to be updated.
+        date (datetime | None): The date the expense to be updated was incurred.
+        category (str | None): The category of the expense to be updated.
+    """
+
+    name: Optional[str] = Field(examples=["Expense name"], default=None)
+    amount: Optional[float] = Field(gt=0, examples=[100.0], default=None)
+    date: Optional[datetime] = Field(
+        examples=["01/01/2022 12:00"], description="24h format is assumed", default=None
+    )
+    category: Optional[str] = Field(examples=["Category name"], default=None)
+
+    class Config:
+        from_attributes = True
+
+    @field_validator("date", mode="before")
     def date_from_string(cls, date_str: str) -> datetime:
         """
         Converts a date <str> in the format d/m/y (passed as decimals) to a <datetime> object
