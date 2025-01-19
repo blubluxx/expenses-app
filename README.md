@@ -2,17 +2,17 @@
 
 ## Description
 
-A personal expense tracker app where users can add, categorize, and analyze their spending habits. This project is designed for intermediate developers and provides a hands-on opportunity to work with Python for data handling, visualization, and web development.
+A personal expense tracker app where users can add, categorize, and analyze their spending habits. This project provides a hands-on opportunity to work with Python for data handling, visualization, and web development.
 
 ---
 
-## Features
+## Features in development
 
 ### 1. User Management
 
 - Sign up and log in functionality.
-- Password hashing using libraries like `bcrypt`.
-- Session management with Flask-Login or Django's authentication system.
+- Password hashing using libraries like `passlib`.
+- Session management using cookies.
 
 ### 2. Expense Tracking
 
@@ -22,8 +22,9 @@ A personal expense tracker app where users can add, categorize, and analyze thei
 
 ### 3. Data Storage
 
-- Use a SQLite database (or PostgreSQL/MySQL for scalability).
 - Store user info, expense records, and categories.
+- PostgreSQL and SQLAlchemy.
+- Alembic for database migrations and versioning.
 
 ### 4. Expense Analytics
 
@@ -31,16 +32,16 @@ A personal expense tracker app where users can add, categorize, and analyze thei
   - Total expenses for a specific period.
   - Most expensive categories.
   - Monthly trends.
-- Create charts using `matplotlib` or `plotly`.
+<!-- - Create charts using `matplotlib` or `plotly`. -->
 
 ### 5. Export Data
 
 - Export expense data to a CSV file for external use.
 
-### 6. Optional: Integration with APIs
+### 6. Integration with APIs
 
 - Currency conversion APIs to support multiple currencies.
-- Email API (e.g., SendGrid) to send monthly summaries to users.
+- Email API to send monthly summaries to users. <!-- (e.g., SendGrid) -->
 
 ---
 
@@ -48,40 +49,42 @@ A personal expense tracker app where users can add, categorize, and analyze thei
 
 ### Backend
 
-- Flask or Django
+- FastAPI
 
+<!--
 ### Frontend (Optional)
 
 - Jinja2 templates (for Flask/Django) or React frontend.
-
+-->
 ### Database
 
-- SQLite (or PostgreSQL/MySQL for advanced features).
+- PostgreSQL.
 
 ### Libraries
-
+<!--
 - `pandas`: For data manipulation.
-- `matplotlib` or `plotly`: For visualizations.
-- `flask_sqlalchemy` or `django_orm`: For database management.
-- `requests`: For API calls.
+- `matplotlib` or `plotly`: For visualizations. -->
+- `SQLAlchemy` and `Alembic` For database management.
+
+### Package management
+- `Astral UV`
+
 
 ### Testing
 
-- Use `pytest` for unit testing.
+- `pytest` for unit testing.
 
 ---
 
 ## Stretch Goals
 
-1. **Mobile-Friendly Web App**:
-   - Responsive design using Bootstrap or Tailwind CSS.
-2. **Budget Alerts**:
+1. **Budget Alerts**:
    - Notify users when they exceed predefined spending limits.
 3. **AI Insights**:
-   - Predict future expenses using machine learning (e.g., `scikit-learn`).
+   - Predict future expenses using machine learning. <!-- (e.g., `scikit-learn`) -->
 
 ---
-
+<!--
 ## Project Structure
 
 ### CLI Version Example
@@ -150,6 +153,7 @@ Welcome to Expense Tracker
 - User-friendly form for inputting expenses.
 
 ---
+-->
 
 ## License
 
@@ -157,6 +161,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-## Contributions
-
-Contributions are welcome! Feel free to submit a pull request or open an issue.
