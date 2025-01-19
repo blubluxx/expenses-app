@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import status
 
 from app.schemas.category import CategoryResponse
+from app.schemas.common.messages import ResponseMessage
 from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseNameDTO
 from app.services import category_service
 from app.services.utils import validators as v, processors as p
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 async def get_user_expenses(user_id: UUID, db: AsyncSession) -> list[ExpenseResponse]:
     """
-    Get all expenses for a user.
+    Get all expenses for a user with flag is_deleted == False.
 
     Args:
         user_id (UUID): The user's unique identifier.
@@ -35,7 +36,9 @@ async def get_user_expenses(user_id: UUID, db: AsyncSession) -> list[ExpenseResp
             detail="User not found.",
         )
 
-    user_expenses = await db.execute(select(Expense).filter(Expense.user_id == user_id))
+    user_expenses = await db.execute(
+        select(Expense).filter(Expense.user_id == user_id, Expense.is_deleted == False)
+    )  # type: ignore
     expenses: list[Expense] = user_expenses.scalars().unique() or []  # type: ignore
     logger.info(f"Fetched all expenses for user: {user_id}")
 
@@ -244,4 +247,48 @@ async def _validate_data(
         category
         if category is not None
         else await category_service.create_category(name=category_name, db=db)
+    )
+
+
+async def _get_by_id_db(expense_id: UUID, db: AsyncSession) -> Optional[Expense]:
+    """
+    Get an expense by its unique identifier.
+
+    Args:
+        expense_id (UUID): The expense's unique identifier.
+        db (AsyncSession): The database session.
+
+    Returns:
+        Expense | None: The expense if found, otherwise None.
+    """
+    result = await db.execute(select(Expense).filter(Expense.id == expense_id))
+    return result.scalars().first()
+
+
+async def delete_expense(expense_id: UUID, db: AsyncSession) -> None:
+    """
+    Delete an expense.
+
+    Args:
+        expense_id (UUID): The expense's unique identifier.
+        db (AsyncSession): The database session.
+    """
+
+    async def _delete():
+        expense = await _get_by_id_db(expense_id=expense_id, db=db)
+        if expense is None:
+            logger.error(f"Expense not found: {expense_id}")
+            raise ApplicationError(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Expense not found.",
+            )
+
+        expense.is_deleted = True
+        await db.commit()
+        logger.info(f"Deleted expense: {expense_id}")
+        return ResponseMessage(message="Expense deleted.")
+
+    return await p.process_db_transaction(
+        transaction_func=_delete,
+        db=db,
     )
