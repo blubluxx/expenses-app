@@ -79,7 +79,8 @@ async def process_db_transaction(transaction_func: Callable, db: AsyncSession) -
         await db.rollback()
         logger.error(f"Integrity error: {str(e)}")
         raise ApplicationError(
-            detail="Database conflict occurred", status_code=status.HTTP_409_CONFLICT
+            detail=f"Database conflict occurred: {str(e)}",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
     except SQLAlchemyError as e:
         await db.rollback()
