@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from sqlalchemy import select
@@ -30,9 +30,19 @@ async def signup(user: UserRegistration, db: AsyncSession) -> ResponseMessage:
     async def _signup():
         await _validate_data(user=user, db=db)
         hashed_password = u.hash_password(password=user.password)
-
+        user_timezone = _create_timestamp(user=user)
         new_user = User(
-            **user.model_dump(exclude={"password"}), password=hashed_password
+            **user.model_dump(
+                exclude={
+                    "password",
+                    "created_at",
+                    "city",
+                    "state",
+                    "country",
+                }
+            ),
+            password=hashed_password,
+            timezone=user_timezone.zone,
         )
         logger.info(f"Registering user: {new_user.id}")
         db.add(new_user)
@@ -71,6 +81,24 @@ async def _validate_data(user: UserRegistration, db: AsyncSession) -> None:
         )
 
 
+def _create_timestamp(user: UserRegistration) -> Any:
+    """
+    Get the timezone of a user.
+
+    Args:
+        user (UserResponse): The user.
+
+    Returns:
+        Any: The timezone of the user.
+    """
+    timezone: Optional[str] = u.get_timezone(
+        city=user.city, country=user.country, state=user.state
+    )
+    if not timezone:
+        timezone = "UTC"
+    return timezone
+
+
 async def get_by_username(username: str, db: AsyncSession) -> UserResponse:
     """
     Get a user by username.
@@ -98,13 +126,7 @@ async def get_by_username(username: str, db: AsyncSession) -> UserResponse:
         )
 
     logger.info(msg="Fetched user")
-    return UserResponse(
-        id=user.id,
-        username=user.username,
-        password=user.password,
-        email=user.email,
-        is_admin=user.is_admin,
-    )
+    return UserResponse.create(user=user)
 
 
 async def get_by_id(user_id: UUID, db: AsyncSession) -> UserResponse:
@@ -133,13 +155,7 @@ async def get_by_id(user_id: UUID, db: AsyncSession) -> UserResponse:
         )
 
     logger.info(msg="Fetched user")
-    return UserResponse(
-        id=user.id,
-        username=user.username,
-        password=user.password,
-        email=user.email,
-        is_admin=user.is_admin,
-    )
+    return UserResponse.create(user=user)
 
 
 async def get_all(
@@ -160,16 +176,7 @@ async def get_all(
     result = await db.execute(select(User).offset(offset).limit(limit))
     users: list[User] = result.scalars().all() or []  # type: ignore
     logger.info(msg="Fetched all users")
-    return [
-        UserResponse(
-            id=user.id,
-            username=user.username,
-            password=user.password,
-            email=user.email,
-            is_admin=user.is_admin,
-        )
-        for user in users
-    ]
+    return [UserResponse.create(user=user) for user in users]
 
 
 async def change_user_role(user_id: UUID, db: AsyncSession) -> ResponseMessage:
