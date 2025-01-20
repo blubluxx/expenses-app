@@ -30,7 +30,7 @@ async def signup(user: UserRegistration, db: AsyncSession) -> ResponseMessage:
     async def _signup():
         await _validate_data(user=user, db=db)
         hashed_password = u.hash_password(password=user.password)
-        user_timezone = _create_timestamp(user=user)
+        user_timezone = _get_user_timezone(user=user)
         new_user = User(
             **user.model_dump(
                 exclude={
@@ -81,7 +81,7 @@ async def _validate_data(user: UserRegistration, db: AsyncSession) -> None:
         )
 
 
-def _create_timestamp(user: UserRegistration) -> Any:
+def _get_user_timezone(user: UserRegistration) -> Any:
     """
     Get the timezone of a user.
 

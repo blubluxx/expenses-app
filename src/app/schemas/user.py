@@ -88,6 +88,7 @@ class UserResponse(BaseModel):
     Attributes:
         id (UUID): The user's ID.
         username (str): The user's username.
+        password (str): The user's password.
         email (str): The user's email.
         is_admin (bool): A boolean indicating if the user is an admin.
         is_deleted (bool): A boolean indicating if the user is deleted.
@@ -97,6 +98,7 @@ class UserResponse(BaseModel):
 
     id: UUID
     username: str
+    password: str
     email: EmailStr
     is_admin: bool
     is_deleted: bool | None = None
