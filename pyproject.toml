@@ -26,4 +26,7 @@ dependencies = [
     "types-psycopg2>=2.9.21.20241019",
     "types-pywin32>=308.0.0.20241221",
     "types-ujson>=5.10.0.20240515",
+    "geopy>=2.4.1",
+    "timezonefinder>=6.5.7",
+    "pytz>=2024.2",
 ]

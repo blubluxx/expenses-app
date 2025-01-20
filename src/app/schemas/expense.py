@@ -4,6 +4,7 @@ from uuid import UUID
 from dateutil import parser
 
 from pydantic import BaseModel, Field, field_validator
+import pytz
 
 from app.sql_app.expense.expense import Expense
 from app.sql_app.expense_name.expense_name import ExpenseName
@@ -38,14 +39,6 @@ class ExpenseResponse(BaseModel):
     def date_to_str(cls, value) -> str:
         return value.strftime("%d-%m-%Y %H:%M")
 
-    @field_validator("created_at", mode="before")
-    def created_at_to_str(cls, value) -> str:
-        return value.strftime("%d-%m-%Y %H:%M")
-
-    @field_validator("updated_at", mode="before")
-    def updated_at_to_str(cls, value) -> str:
-        return value.strftime("%d-%m-%Y %H:%M")
-
     @field_validator("name", mode="before")
     def name_to_str(cls, value) -> str:
         return value.name if isinstance(value, ExpenseName) else value
@@ -61,14 +54,23 @@ class ExpenseResponse(BaseModel):
         Returns:
             ExpenseResponse: The created ExpenseResponse object.
         """
+        user_timezone: str = expense.user.timezone
+        user_tz = pytz.timezone(user_timezone)
+
+        created_at: str = expense.created_at.astimezone(user_tz).strftime(
+            "%d-%m-%Y %H:%M"
+        )
+        updated_at: str = expense.updated_at.astimezone(user_tz).strftime(
+            "%d-%m-%Y %H:%M"
+        )
 
         return ExpenseResponse(
             id=expense.id,
             name=expense.name,
             amount=expense.amount,
             date=expense.date,
-            created_at=expense.created_at,
-            updated_at=expense.updated_at,
+            created_at=created_at,
+            updated_at=updated_at,
             note=expense.note,
         )
 

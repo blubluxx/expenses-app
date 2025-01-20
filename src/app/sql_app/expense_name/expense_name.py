@@ -50,9 +50,11 @@ class ExpenseName(Base):
     )
     name: Mapped[str] = mapped_column(nullable=False, unique=True)
 
-    user: Mapped["User"] = relationship("User", back_populates="expense_names")
+    user: Mapped["User"] = relationship(
+        "User", back_populates="expense_names", lazy="joined"
+    )
     category: Mapped["Category"] = relationship(
-        "Category", back_populates="expense_names"
+        "Category", back_populates="expense_names", lazy="joined"
     )
     expenses: Mapped[list["Expense"]] = relationship(
         "Expense",

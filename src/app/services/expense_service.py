@@ -101,7 +101,7 @@ async def _get_expense_name(
         ExpenseNameDTO: The expense name.
     """
     existing_expense_name: Optional[ExpenseNameDTO] = await _find_expense_name(
-        name=expense_name, db=db
+        user_id=user_id, name=expense_name, db=db
     )
     return (
         existing_expense_name
@@ -147,11 +147,14 @@ async def _create_expense(
     )
 
 
-async def _find_expense_name(name: str, db: AsyncSession) -> Optional[ExpenseNameDTO]:
+async def _find_expense_name(
+    user_id: UUID, name: str, db: AsyncSession
+) -> Optional[ExpenseNameDTO]:
     """
     Find an expense name by name.
 
     Args:
+        user_id (UUID): The user's unique identifier.
         name (str): The name of the expense.
         db (AsyncSession): The database session.
 
@@ -159,7 +162,9 @@ async def _find_expense_name(name: str, db: AsyncSession) -> Optional[ExpenseNam
         ExpenseNameDTO | None: The expense name if found, otherwise None.
     """
 
-    result = await db.execute(select(ExpenseName).filter(ExpenseName.name == name))
+    result = await db.execute(
+        select(ExpenseName).filter(ExpenseName.name == name, Expense.user_id == user_id)
+    )
     expense_name: Optional[ExpenseName] = result.scalars().first()
     logger.info(f"Fetched expense_name: {expense_name}")
     return (

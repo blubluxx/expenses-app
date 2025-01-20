@@ -62,4 +62,6 @@ class Expense(Base):
     name: Mapped["ExpenseName"] = relationship(
         "ExpenseName", back_populates="expenses", lazy="joined"
     )
-    user: Mapped["User"] = relationship("User", back_populates="expenses")
+    user: Mapped["User"] = relationship(
+        "User", back_populates="expenses", lazy="joined"
+    )

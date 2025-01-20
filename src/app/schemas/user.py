@@ -1,6 +1,10 @@
+from datetime import datetime
 import re
+from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, field_validator, Field, EmailStr
+
+from app.sql_app.user.user import User
 
 
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,30}$"
@@ -14,6 +18,9 @@ class UserRegistration(BaseModel):
         username (str): The user's username.
         password (str): The user's password.
         email (EmailStr): The user's email address.
+        city (str): The user's city.
+        state (str | None): The user's state.
+        country (str): The user's country.
 
     Methods:
         validate_password: Validates the user's password.
@@ -23,6 +30,9 @@ class UserRegistration(BaseModel):
     username: str = Field(examples=["username_example"])
     password: str = Field(examples=["Password_123!"])
     email: EmailStr
+    city: str = Field(examples=["Sofia"])
+    state: Optional[str] = Field(examples=["State"], default=None)
+    country: str = Field(examples=["Bulgaria"])
 
     @field_validator("password")
     def validate_password(cls, value) -> str:
@@ -36,6 +46,18 @@ class UserRegistration(BaseModel):
     def validate_username(cls, value) -> str:
         if 5 > len(value) > 12:
             raise ValueError("Username must be between 5 and 12 characters long.")
+        return value
+
+    @field_validator("city")
+    def validate_city(cls, value) -> str:
+        if not all(char.isalpha() or char.isspace() for char in value):
+            raise ValueError("City must contain only letters and spaces.")
+        return value
+
+    @field_validator("country")
+    def validate_country(cls, value) -> str:
+        if not all(char.isalpha() or char.isspace() for char in value):
+            raise ValueError("City must contain only letters and spaces.")
         return value
 
     class Config:
@@ -70,6 +92,8 @@ class UserResponse(BaseModel):
         email (str): The user's email.
         is_admin (bool): A boolean indicating if the user is an admin.
         is_deleted (bool): A boolean indicating if the user is deleted.
+        created_at (str): The timestamp when the user was created.
+        timezone (str): The user's timezone.
     """
 
     id: UUID
@@ -78,6 +102,25 @@ class UserResponse(BaseModel):
     email: EmailStr
     is_admin: bool
     is_deleted: bool | None = None
+    created_at: str
+    timezone: str
 
     class Config:
         from_attributes = True
+
+    @classmethod
+    def create(cls, user: User) -> "UserResponse":
+        return cls(
+            id=user.id,
+            username=user.username,
+            password=user.password,
+            email=user.email,
+            is_admin=user.is_admin,
+            is_deleted=user.is_deleted,
+            created_at=user.created_at,
+            timezone=user.timezone,
+        )
+
+    @field_validator("created_at", mode="before")
+    def created_at_to_str(cls, value: datetime) -> str:
+        return value.strftime("%d-%m-%Y %H:%M %Z")
