@@ -13,6 +13,7 @@ from app.schemas.expense import (
     ExpenseResponse,
     ExpenseNameDTO,
     ExpenseUpdate,
+    Note,
 )
 from app.services import category_service
 from app.services.utils import validators as v, processors as p
@@ -47,16 +48,7 @@ async def get_user_expenses(user_id: UUID, db: AsyncSession) -> list[ExpenseResp
     expenses: list[Expense] = user_expenses.scalars().unique() or []  # type: ignore
     logger.info(f"Fetched all expenses for user: {user_id}")
 
-    return [
-        ExpenseResponse(
-            id=expense.id,
-            name=expense.name,  # type: ignore
-            amount=expense.amount,
-            date=expense.date,
-            created_at=expense.created_at,
-        )
-        for expense in expenses
-    ]
+    return [ExpenseResponse.create(expense=expense) for expense in expenses]
 
 
 async def create_expense(
@@ -141,18 +133,13 @@ async def _create_expense(
             user_id=expense_name.user_id,
             date=expense.date,
             amount=expense.amount,
+            note=expense.note,
         )
         logger.info(f"Creating expense: {new_expense.id}")
         db.add(new_expense)
         await db.commit()
         await db.refresh(new_expense)
-        return ExpenseResponse(
-            id=new_expense.id,
-            name=expense_name.name,
-            amount=new_expense.amount,
-            date=new_expense.date,
-            created_at=new_expense.created_at,
-        )
+        return ExpenseResponse.create(expense=new_expense)
 
     return await p.process_db_transaction(
         transaction_func=_create,
@@ -269,7 +256,7 @@ async def _get_category(category_name: str, db: AsyncSession) -> CategoryRespons
     )
 
 
-async def _get_by_id_db(expense_id: UUID, db: AsyncSession) -> Optional[Expense]:
+async def _get_by_id_db(expense_id: UUID, db: AsyncSession) -> Expense:
     """
     Get an expense by its unique identifier.
 
@@ -379,17 +366,39 @@ async def _update_expense(
             expense.name.category_id = category.id
             logger.info(f"Updated expense category: {category.name}")
 
+        expense.note = expense_update.note
+        logger.info(f"Updated expense note: {expense.note}")
         await db.commit()
         await db.refresh(expense)
-        return ExpenseResponse(
-            id=expense.id,
-            name=expense.name.name,
-            amount=expense.amount,
-            date=expense.date,
-            updated_at=expense.created_at,
-        )
+        return ExpenseResponse.create(expense=expense)
 
     return await p.process_db_transaction(
         transaction_func=_update,
+        db=db,
+    )
+
+
+async def add_note(expense_id: UUID, note: Note, db: AsyncSession) -> ExpenseResponse:
+    """
+    Add a note to an expense.
+
+    Args:
+        expense_id (UUID): The expense's unique identifier.
+        note (Note): The note to add.
+        db (AsyncSession): The database session.
+
+    Returns:
+        ExpenseResponse: The updated expense.
+    """
+
+    async def _add_note():
+        expense: Expense = await _get_by_id_db(expense_id=expense_id, db=db)
+        expense.note = note.content
+        await db.commit()
+        await db.refresh(expense)
+        return ExpenseResponse.create(expense=expense)
+
+    return await p.process_db_transaction(
+        transaction_func=_add_note,
         db=db,
     )
