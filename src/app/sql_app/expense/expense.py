@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, func
+from sqlalchemy.dialects.postgresql import UUID, TEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.sql_app.database import Base
@@ -47,13 +47,14 @@ class Expense(Base):
     )
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    note: Mapped[str] = mapped_column(TEXT, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
-        server_onupdate=func.now(),
+        onupdate=func.now(),
         nullable=False,
     )
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
