@@ -5,6 +5,7 @@ from dateutil import parser
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.sql_app.expense.expense import Expense
 from app.sql_app.expense_name.expense_name import ExpenseName
 
 
@@ -15,9 +16,11 @@ class ExpenseResponse(BaseModel):
     Attributes:
         id (UUID): The expense's unique identifier.
         name (str): The name of the expense.
-        date (datetime): The date the expense was incurred.
-        created_at (datetime): The timestamp when the expense was created.
         amount (float): The amount of the expense.
+        date (str): The date the expense was incurred.
+        created_at (str): The timestamp when the expense was created.
+        updated_at (str): The timestamp when the expense was last updated.
+        note (str | None): The note associated with the expense.
     """
 
     id: UUID
@@ -26,6 +29,7 @@ class ExpenseResponse(BaseModel):
     date: str
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+    note: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -46,6 +50,28 @@ class ExpenseResponse(BaseModel):
     def name_to_str(cls, value) -> str:
         return value.name if isinstance(value, ExpenseName) else value
 
+    @classmethod
+    def create(cls, expense: Expense) -> "ExpenseResponse":
+        """
+        Creates an ExpenseResponse object from an Expense object.
+
+        Args:
+            expense (Expense): The Expense object to create the ExpenseResponse from.
+
+        Returns:
+            ExpenseResponse: The created ExpenseResponse object.
+        """
+
+        return ExpenseResponse(
+            id=expense.id,
+            name=expense.name,
+            amount=expense.amount,
+            date=expense.date,
+            created_at=expense.created_at,
+            updated_at=expense.updated_at,
+            note=expense.note,
+        )
+
 
 class ExpenseCreate(BaseModel):
     """
@@ -56,6 +82,7 @@ class ExpenseCreate(BaseModel):
         amount (float): The amount of the expense.
         date (datetime): The date the expense was incurred.
         category (str): The category of the expense.
+        note (str | None): The note associated with the expense.
     """
 
     name: str = Field(examples=["Expense name"])
@@ -64,6 +91,7 @@ class ExpenseCreate(BaseModel):
         examples=["01/01/2022 12:00"], description="24h format is assumed"
     )
     category: str = Field(examples=["Category name"])
+    note: Optional[str] = Field(examples=["Expense description"], default=None)
 
     class Config:
         from_attributes = True
@@ -86,6 +114,7 @@ class ExpenseUpdate(BaseModel):
         amount (float | None): The amount of the expense to be updated.
         date (datetime | None): The date the expense to be updated was incurred.
         category (str | None): The category of the expense to be updated.
+        note (str | None): The note associated with the expense to be updated
     """
 
     name: Optional[str] = Field(examples=["Expense name"], default=None)
@@ -94,6 +123,7 @@ class ExpenseUpdate(BaseModel):
         examples=["01/01/2022 12:00"], description="24h format is assumed", default=None
     )
     category: Optional[str] = Field(examples=["Category name"], default=None)
+    note: Optional[str] = Field(examples=["Expense description"], default=None)
 
     class Config:
         from_attributes = True
@@ -125,3 +155,14 @@ class ExpenseNameDTO(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class Note(BaseModel):
+    """
+    A Pydantic model for an expense note.
+
+    Attributes:
+        note (str): The note associated with the expense.
+    """
+
+    content: str = Field(examples=["Expense description"], min_length=1)
