@@ -295,7 +295,6 @@ async def delete_expense(expense_id: UUID, db: AsyncSession) -> None:
     async def _delete():
         expense: Expense = await _get_by_id_db(expense_id=expense_id, db=db)
         expense.is_deleted = True
-        db.add(expense)
         await db.commit()
         logger.info(f"Deleted expense: {expense_id}")
         return ResponseMessage(message="Expense deleted.")
@@ -369,7 +368,6 @@ async def _update_expense(
 
         expense.note = expense_update.note
         logger.info(f"Updated expense note: {expense.note}")
-        db.add(expense)
         await db.commit()
         await db.refresh(expense)
         return ExpenseResponse.create(expense=expense)
@@ -396,7 +394,6 @@ async def add_note(expense_id: UUID, note: Note, db: AsyncSession) -> ExpenseRes
     async def _add_note():
         expense: Expense = await _get_by_id_db(expense_id=expense_id, db=db)
         expense.note = note.content
-        db.add(expense)
         await db.commit()
         await db.refresh(expense)
         return ExpenseResponse.create(expense=expense)
