@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select
@@ -197,6 +197,7 @@ async def change_user_role(user_id: UUID, db: AsyncSession) -> ResponseMessage:
 
         user.is_admin = not user.is_admin
         logger.info(f"Changing is_admin for user {user.id} to {user.is_admin}")
+        db.add(user)
         await db.commit()
 
         return ResponseMessage(message="User role updated successfully")
