@@ -1,12 +1,16 @@
 import logging
-from typing import Optional
+
+from dateutil import parser
+from datetime import datetime
+from typing import Any, Optional
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import status
 
 from app.schemas.category import CategoryResponse
+from app.schemas.common.common import FilterOptions
 from app.schemas.common.messages import ResponseMessage
 from app.schemas.expense import (
     ExpenseCreate,
@@ -18,22 +22,29 @@ from app.schemas.expense import (
 from app.services import category_service
 from app.services.utils import validators as v, processors as p
 from app.schemas.common.application_error import ApplicationError
+from app.sql_app.category.category import Category
 from app.sql_app.expense.expense import Expense
 from app.sql_app.expense_name.expense_name import ExpenseName
 
 logger = logging.getLogger(__name__)
 
 
-async def get_user_expenses(user_id: UUID, db: AsyncSession) -> list[ExpenseResponse]:
+async def get_user_expenses(
+    user_id: UUID, filter_options: FilterOptions, db: AsyncSession
+) -> list[ExpenseResponse]:
     """
     Get all expenses for a user with flag is_deleted == False.
 
     Args:
         user_id (UUID): The user's unique identifier.
+        filter_options (FilterOptions): The filter options for the expenses.
         db (AsyncSession): The database session.
 
     Returns:
         List[ExpenseResponse]: A list of expenses for the user.
+
+    Raises:
+        ApplicationError: If user with given ID does not exist.
     """
     if not await v.user_exists(user_id=user_id, db=db):
         logger.error(f"User not found: {user_id}")
@@ -42,13 +53,87 @@ async def get_user_expenses(user_id: UUID, db: AsyncSession) -> list[ExpenseResp
             detail="User not found.",
         )
 
-    user_expenses = await db.execute(
-        select(Expense).filter(Expense.user_id == user_id, Expense.is_deleted == False)
-    )  # type: ignore
-    expenses: list[Expense] = user_expenses.scalars().unique() or []  # type: ignore
+    query = select(Expense).filter(
+        Expense.user_id == user_id, Expense.is_deleted == False
+    )
+
+    query = await filter_expenses(
+        user_id=user_id, query=query, filter_options=filter_options, db=db
+    )
+    logger.info(f"Filtered expenses for user: {user_id}")
+
+    if filter_options.sort_by == "amount":
+        sort_column = Expense.amount
+    else:
+        sort_column = Expense.date
+
+    order = asc if filter_options.order_by == "asc" else desc
+    query = (
+        query.order_by(order(sort_column))
+        .offset(filter_options.offset)
+        .limit(filter_options.limit)
+    )
+
+    result = await db.execute(query)
+    expenses: list[Expense] = result.scalars().unique()
+
     logger.info(f"Fetched all expenses for user: {user_id}")
 
     return [ExpenseResponse.create(expense=expense) for expense in expenses]
+
+
+async def filter_expenses(
+    user_id: UUID, query: Any, filter_options: FilterOptions, db: AsyncSession
+) -> Any:
+    if filter_options.expense_name:
+        query = query.filter(
+            Expense.name.has(
+                ExpenseName.name.ilike(f"%{filter_options.expense_name}%")
+            ),
+            Expense.user_id == user_id,
+        )
+
+    if filter_options.category:
+        query = query.filter(
+            Expense.name.has(
+                ExpenseName.category.has(
+                    Category.name.ilike(f"%{filter_options.category}%")
+                )
+            )
+        )
+
+    if filter_options.min_amount is not None:
+        query = query.filter(Expense.amount >= filter_options.min_amount)
+
+    if filter_options.max_amount is not None:
+        query = query.filter(Expense.amount <= filter_options.max_amount)
+
+    if filter_options.start_date:
+        start_date: datetime = parser.parse(filter_options.start_date)
+        query = query.filter(Expense.date >= start_date)
+        return query.filter(Expense.date <= filter_options.end_date)
+
+    # if filter_options.time_period:
+    #     if filter_options.start_date is None:
+    #         now = datetime.now()
+    #     else:
+    #         now = filter_options.start_date
+    #     match filter_options.time_period:
+    #         case "day":
+    #             start_of_period = now - timedelta(days=1)
+    #         case "week":
+    #             start_of_period = now - timedelta(weeks=1)
+    #         case "month":
+    #             start_of_period = now.replace(day=1)
+    #         case "year":
+    #             start_of_period = now.replace(month=1, day=1)
+    #         case _:
+    #             start_of_period = None
+
+    #     if start_of_period is not None:
+    #         query = query.filter(Expense.date >= start_of_period)
+
+    return query
 
 
 async def create_expense(
