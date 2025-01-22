@@ -18,6 +18,7 @@ class ExpenseResponse(BaseModel):
         id (UUID): The expense's unique identifier.
         name (str): The name of the expense.
         amount (float): The amount of the expense.
+        category (str): The category of the expense.
         date (str): The date the expense was incurred.
         created_at (str): The timestamp when the expense was created.
         updated_at (str): The timestamp when the expense was last updated.
@@ -27,6 +28,7 @@ class ExpenseResponse(BaseModel):
     id: UUID
     name: str
     amount: float
+    category: str
     date: str
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -68,6 +70,7 @@ class ExpenseResponse(BaseModel):
             id=expense.id,
             name=expense.name,
             amount=expense.amount,
+            category=expense.name.category.name,
             date=expense.date,
             created_at=created_at,
             updated_at=updated_at,
@@ -90,7 +93,7 @@ class ExpenseCreate(BaseModel):
     name: str = Field(examples=["Expense name"])
     amount: float = Field(gt=0, examples=[100.0])
     date: datetime = Field(
-        examples=["01/01/2022 12:00"], description="24h format is assumed"
+        examples=["01/01/2025 12:00"], description="24h format is assumed"
     )
     category: str = Field(examples=["Category name"])
     note: Optional[str] = Field(examples=["Expense description"], default=None)

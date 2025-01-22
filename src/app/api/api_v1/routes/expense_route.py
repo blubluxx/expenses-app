@@ -3,9 +3,10 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.schemas.common.common import FilterOptions
 from app.schemas.user import UserResponse
-from app.sql_app.database import get_db
 from app.schemas.expense import ExpenseCreate, ExpenseUpdate, Note
+from app.sql_app.database import get_db
 from app.services import expense_service
 from app.services import auth_service
 from app.services.utils.processors import process_request
@@ -19,6 +20,7 @@ router = APIRouter()
     description="Get all expenses for a user.",
 )
 async def get_user_expenses(
+    filter_options: FilterOptions = Depends(),
     user: UserResponse = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -27,7 +29,9 @@ async def get_user_expenses(
     """
 
     async def _get_user_expenses():
-        return await expense_service.get_user_expenses(user_id=user.id, db=db)
+        return await expense_service.get_user_expenses(
+            user_id=user.id, filter_options=filter_options, db=db
+        )
 
     return await process_request(
         get_entities_fn=_get_user_expenses,
