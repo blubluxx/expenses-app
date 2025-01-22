@@ -36,10 +36,10 @@ class FilterOptions(BaseModel):
     expense_name: Optional[str] = None
     category: Optional[str] = None
     start_date: Optional[str] = None
-    end_date: Optional[str] = datetime.now().strftime("%d-%M-%Y")
+    end_date: Optional[str] = datetime.now().strftime("%d-%m-%Y")
     min_amount: Optional[float] = None
     max_amount: Optional[float] = None
-    time_period: Literal["day", "week", "month", "year"] = "month"
+    time_period: Optional[Literal["day", "week", "month", "year"]] = None
     sort_by: Literal["date", "amount"] = "date"
     order_by: Literal["asc", "desc"] = "desc"
     offset: int = 0

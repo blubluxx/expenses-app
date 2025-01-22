@@ -93,7 +93,7 @@ class ExpenseCreate(BaseModel):
     name: str = Field(examples=["Expense name"])
     amount: float = Field(gt=0, examples=[100.0])
     date: datetime = Field(
-        examples=["01/01/2022 12:00"], description="24h format is assumed"
+        examples=["01/01/2025 12:00"], description="24h format is assumed"
     )
     category: str = Field(examples=["Category name"])
     note: Optional[str] = Field(examples=["Expense description"], default=None)

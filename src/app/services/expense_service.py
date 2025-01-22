@@ -1,7 +1,7 @@
 import logging
 
 from dateutil import parser
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Optional
 from uuid import UUID
 
@@ -113,25 +113,22 @@ async def filter_expenses(
         query = query.filter(Expense.date >= start_date)
         return query.filter(Expense.date <= filter_options.end_date)
 
-    # if filter_options.time_period:
-    #     if filter_options.start_date is None:
-    #         now = datetime.now()
-    #     else:
-    #         now = filter_options.start_date
-    #     match filter_options.time_period:
-    #         case "day":
-    #             start_of_period = now - timedelta(days=1)
-    #         case "week":
-    #             start_of_period = now - timedelta(weeks=1)
-    #         case "month":
-    #             start_of_period = now.replace(day=1)
-    #         case "year":
-    #             start_of_period = now.replace(month=1, day=1)
-    #         case _:
-    #             start_of_period = None
+    if filter_options.time_period:
+        now = datetime.now()
+        match filter_options.time_period:
+            case "day":
+                start_of_period = now - timedelta(days=1)
+            case "week":
+                start_of_period = now - timedelta(days=now.weekday())
+            case "month":
+                start_of_period = now.replace(day=1)
+            case "year":
+                start_of_period = now.replace(month=1, day=1)
+            case _:
+                start_of_period = None
 
-    #     if start_of_period is not None:
-    #         query = query.filter(Expense.date >= start_of_period)
+        if start_of_period is not None:
+            query = query.filter(Expense.date >= start_of_period)
 
     return query
 
