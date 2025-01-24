@@ -20,10 +20,6 @@ async def create_category(
     name: str,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    """
-    Create a new category.
-    """
-
     async def _create_category():
         return await category_service.create_category(name=name, db=db)
 
