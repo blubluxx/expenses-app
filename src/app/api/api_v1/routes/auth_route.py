@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.schemas.user import UserResponse
 from app.sql_app.database import get_db
 from app.services import auth_service
 
@@ -13,7 +14,7 @@ router = APIRouter()
 async def login(
     login_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
-) -> Response:
+) -> JSONResponse:
     return await auth_service.login(login_data=login_data, db=db)
 
 
@@ -21,9 +22,17 @@ async def login(
     "/logout",
     description="Logs out the current user by invalidating their existing tokens.",
 )
-async def logout(
-    request: Request, token: str = Depends(auth_service.oauth2_scheme)
-) -> Response:
+async def logout(request: Request) -> Response:
     response = await auth_service.logout(request=request)
     response.status_code = status.HTTP_200_OK
     return response
+
+
+@router.get(
+    "/me",
+    description="Get the current user",
+)
+async def get_current_user(
+    user: UserResponse = Depends(auth_service.get_current_user),
+) -> JSONResponse:
+    return {"user_id": user.id}
