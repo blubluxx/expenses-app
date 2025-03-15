@@ -10,6 +10,7 @@ from jose import ExpiredSignatureError, JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings, Settings
+from app.schemas.common.application_error import ApplicationError
 from app.sql_app.database import get_db
 from app.schemas.user import UserLogin, UserResponse
 from app.schemas.common.common import Token
@@ -117,9 +118,16 @@ async def _authenticate_user(user: UserLogin, db: AsyncSession) -> UUID:
     Raises:
         HTTPException: If the password is wrong.
     """
-    user_db: UserResponse = await user_service.get_by_username(
-        username=user.username, db=db
-    )
+    try:
+        user_db: UserResponse = await user_service.get_by_username(
+            username=user.username, db=db
+        )
+    except ApplicationError:
+        logger.error(msg="Passwords do not match")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No such user exists"
+        )
+
     stored_password: str = user_db.password
     if not u.verify_password(
         password=user_db.password, hashed_password=stored_password
@@ -219,7 +227,7 @@ async def get_current_user(
         logger.error(msg="Token not found in cookies")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User is not authenitcated",
+            detail="User is not authenticated",
         )
 
     payload: dict = _verify_access_token(token)
