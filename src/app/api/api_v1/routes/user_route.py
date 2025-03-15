@@ -4,12 +4,30 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.sql_app.database import get_db
-from app.schemas.user import UserRegistration
+from app.schemas.user import BaseUser, UserRegistration
 from app.services import user_service
 from app.services import auth_service
 from app.services.utils.processors import process_request
 
 router = APIRouter()
+
+
+@router.post(
+    "/verify",
+    description="Verify if user data is unique in the database",
+    status_code=status.HTTP_200_OK,
+)
+async def verify(
+    user_data: BaseUser, db: AsyncSession = Depends(get_db)
+) -> JSONResponse:
+    async def _verify():
+        return await user_service.verify_user(user_data, db)
+
+    return await process_request(
+        get_entities_fn=_verify,
+        status_code=status.HTTP_200_OK,
+        not_found_err_msg="Could not verify user data",
+    )
 
 
 @router.post(
