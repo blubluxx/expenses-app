@@ -64,3 +64,27 @@ async def get_by_name(name: str, db: AsyncSession) -> Optional[CategoryResponse]
         if category
         else None
     )
+
+
+async def get_all(db: AsyncSession) -> list[CategoryResponse]:
+    """
+    Get all categories.
+
+    Args:
+        db (AsyncSession): The database session.
+
+    Returns:
+        list[CategoryResponse]: A list of all categories.
+    """
+
+    result = await db.execute(select(Category))
+    categories = result.scalars().all()
+    logger.info(f"Fetched {len(categories)} categories")
+
+    return [
+        CategoryResponse(
+            id=category.id,
+            name=category.name,
+        )
+        for category in categories
+    ]
