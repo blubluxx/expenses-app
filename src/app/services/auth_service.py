@@ -59,7 +59,13 @@ async def logout(request: Request) -> Response:
         request.cookies.clear()
         response = JSONResponse({"msg": "Logged out."})
         response.delete_cookie(
-            key="token",
+            key="uId",
+            httponly=False,
+            secure=True,
+            samesite="none",
+        )
+        response.delete_cookie(
+            key="ATS",
             httponly=True,
             secure=True,
             samesite="none",
@@ -75,27 +81,32 @@ async def logout(request: Request) -> Response:
 
 def _set_cookies(token: Token) -> Response:
     """
-    Sets a secure HTTP-only cookie with the provided token.
+    Sets cookies with header+payload and signature.
 
     Args:
-        token (Token): The token object containing the access token.
+        token_parts (dict): Dictionary containing header_payload and signature.
 
     Returns:
-        Response: A JSON response indicating successful login with the cookie set.
-
-    Raises:
-        HTTPException: If there is an error setting the cookie, an HTTP 500 error is raised with the exception details.
+        Response: A JSON response indicating successful login with cookies set.
     """
     try:
         response = JSONResponse({"msg": "Logged in."})
         response.set_cookie(
-            key="token",
-            value=token.access_token,
+            key="uId",
+            value=token.header_payload,
+            httponly=False,
+            secure=True,
+            samesite="none",
+        )
+
+        response.set_cookie(
+            key="ATS",
+            value=token.signature,
             httponly=True,
             secure=True,
             samesite="none",
         )
-        logger.info(msg="Set cookie")
+        logger.info(msg="Set cookies")
         return response
     except KeyError as e:
         raise HTTPException(
@@ -164,7 +175,12 @@ def _create_access_token(data: dict) -> Token:
             to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
         )
         logger.info(msg="Created access token")
-        return Token(access_token=token, token_type="bearer")
+
+        header_payload = ".".join(token.split(".")[:2])
+        signature = str(token.split(".")[2])
+
+        return Token(header_payload=header_payload, signature=signature)
+
     except JWTError:
         raise HTTPException(
             detail="Could not create token",
@@ -222,14 +238,17 @@ async def get_current_user(
     Raises:
         HTTPException: If the token is invalid or the user does not exist.
     """
-    token: Optional[str] = request.cookies.get("token")
-    if not token:
-        logger.error(msg="Token not found in cookies")
+    token_payload: Optional[str] = request.cookies.get("uId")
+    token_signature: Optional[str] = request.cookies.get("ATS")
+
+    if not token_payload or not token_signature:
+        logger.error("Token payload or signature is missing")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User is not authenticated",
         )
 
+    token: str = f"{token_payload}.{token_signature}"
     payload: dict = _verify_access_token(token)
     user_id: Optional[Any] = payload.get("sub")
 

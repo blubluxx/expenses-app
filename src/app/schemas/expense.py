@@ -102,12 +102,12 @@ class ExpenseCreate(BaseModel):
         from_attributes = True
 
     @field_validator("date", mode="before")
-    def date_from_string(cls, date_str: str) -> datetime:
+    def date_from_string(cls, date: str | datetime) -> datetime:
         """
         Converts a date <str> in the format d/m/y (passed as decimals) to a <datetime> object
         """
 
-        return parser.parse(date_str)
+        return parser.parse(date) if isinstance(date, str) else date
 
 
 class ExpenseUpdate(BaseModel):

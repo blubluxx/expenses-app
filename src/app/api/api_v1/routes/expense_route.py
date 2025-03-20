@@ -65,7 +65,7 @@ async def create_expense(
 @router.patch(
     "/{expense_id}",
     status_code=status.HTTP_200_OK,
-    description="Update an expense for a user.",
+    description="Delete an expense for a user.",
     dependencies=[Depends(auth_service.get_current_user)],
 )
 async def delete_expense(
