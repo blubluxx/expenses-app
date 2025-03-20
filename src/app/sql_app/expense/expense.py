@@ -45,7 +45,7 @@ class Expense(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("user.id"), nullable=False
     )
-    date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     note: Mapped[str] = mapped_column(TEXT, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
