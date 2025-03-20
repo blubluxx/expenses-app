@@ -26,4 +26,28 @@ async def create_category(
     return await process_request(
         get_entities_fn=_create_category,
         status_code=status.HTTP_201_CREATED,
+        not_found_err_msg="Could not create category",
+    )
+
+
+@router.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    description="Get all categories.",
+    dependencies=[Depends(auth_service.get_current_user)],
+)
+async def get_categories(
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    """
+    Get all categories.
+    """
+
+    async def _get_categories():
+        return await category_service.get_all(db=db)
+
+    return await process_request(
+        get_entities_fn=_get_categories,
+        status_code=status.HTTP_200_OK,
+        not_found_err_msg="Cannot fetch categories.",
     )

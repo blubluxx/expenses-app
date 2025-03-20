@@ -6,9 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import status
 
-from app.schemas.user import UserRegistration, UserResponse
-from app.schemas.common.common import ResponseMessage
-from app.schemas.common.application_error import ApplicationError
+from app.schemas.user import BaseUser, UserRegistration, UserResponse
+from app.schemas.common.messages import ResponseMessage
 from app.services.utils import processors as p, validators as v, utils as u
 from app.sql_app.user.user import User
 
@@ -28,7 +27,8 @@ async def signup(user: UserRegistration, db: AsyncSession) -> ResponseMessage:
     """
 
     async def _signup():
-        await _validate_data(user=user, db=db)
+        user_data = BaseUser(username=user.username, email=user.email)
+        await _validate_data(user_data=user_data, db=db)
         hashed_password = u.hash_password(password=user.password)
         user_timezone = _get_user_timezone(user=user)
         new_user = User(
@@ -42,7 +42,7 @@ async def signup(user: UserRegistration, db: AsyncSession) -> ResponseMessage:
                 }
             ),
             password=hashed_password,
-            timezone=user_timezone.zone,
+            timezone=user_timezone,
         )
         logger.info(f"Registering user: {new_user.id}")
         db.add(new_user)
@@ -57,7 +57,23 @@ async def signup(user: UserRegistration, db: AsyncSession) -> ResponseMessage:
     )
 
 
-async def _validate_data(user: UserRegistration, db: AsyncSession) -> None:
+async def verify_user(user_data: BaseUser, db: AsyncSession) -> ResponseMessage:
+    """
+    Verify if user data is unique in the database.
+
+    Args:
+        user_data (BaseUser): The user data to verify.
+        db (AsyncSession): The database session.
+
+    Returns:
+        ResponseMessage: The response message.
+    """
+
+    await _validate_data(user_data=user_data, db=db)
+    return ResponseMessage(message="User data is unique")
+
+
+async def _validate_data(user_data: BaseUser, db: AsyncSession) -> None:
     """
     Validate if user username and email are unique.
 
@@ -68,13 +84,13 @@ async def _validate_data(user: UserRegistration, db: AsyncSession) -> None:
     Raises:
         ApplicationError: If the username or email already exists.
     """
-    if not await v.unique_username(user.username, db):
+    if not await v.unique_username(user_data.username, db):
         raise ApplicationError(
             status_code=status.HTTP_409_CONFLICT,
             detail="Username already exists",
         )
 
-    if not await v.unique_email(user.email, db):
+    if not await v.unique_email(user_data.email, db):
         raise ApplicationError(
             status_code=status.HTTP_409_CONFLICT,
             detail="Email already exists",

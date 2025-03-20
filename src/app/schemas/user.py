@@ -10,7 +10,26 @@ from app.sql_app.user.user import User
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,30}$"
 
 
-class UserRegistration(BaseModel):
+class BaseUser(BaseModel):
+    """
+    A Pydantic model representing a base user.
+
+    Attributes:
+        username (str): The user's username.
+        email (EmailStr): The user's email address.
+    """
+
+    username: str = Field(examples=["username_example"])
+    email: EmailStr
+
+    @field_validator("username")
+    def validate_username(cls, value) -> str:
+        if 5 > len(value) > 30:
+            raise ValueError("Username must be between 5 and 30 characters long.")
+        return value
+
+
+class UserRegistration(BaseUser):
     """'
     A Pydantic model for user registration.
 
@@ -27,9 +46,7 @@ class UserRegistration(BaseModel):
         validate_username: Validates the user's username.
     """
 
-    username: str = Field(examples=["username_example"])
     password: str = Field(examples=["Password_123!"])
-    email: EmailStr
     city: str = Field(examples=["Sofia"])
     state: Optional[str] = Field(examples=["State"], default=None)
     country: str = Field(examples=["Bulgaria"])
@@ -40,12 +57,6 @@ class UserRegistration(BaseModel):
             raise ValueError(
                 "Password must be between 8 and 30 characters long and contain at least one lowercase letter, one uppercase letter, one digit, and one special character."
             )
-        return value
-
-    @field_validator("username")
-    def validate_username(cls, value) -> str:
-        if 5 > len(value) > 12:
-            raise ValueError("Username must be between 5 and 12 characters long.")
         return value
 
     @field_validator("city")
@@ -101,7 +112,7 @@ class UserResponse(BaseModel):
     password: str
     email: EmailStr
     is_admin: bool
-    is_deleted: bool | None = None
+    is_deleted: bool
     created_at: str
     timezone: str
 
