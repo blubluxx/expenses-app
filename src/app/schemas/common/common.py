@@ -8,12 +8,12 @@ class Token(BaseModel):
     Pydantic class representing an access token.
 
     Attributes:
-        access_token (str): The access token.
-        token_type (str): The token type
+        header_payload (str): Payload of the token.
+        signature (str): Signature of the JWT token.
     """
 
-    access_token: str
-    token_type: str
+    header_payload: str
+    signature: str
 
 
 class FilterOptions(BaseModel):
