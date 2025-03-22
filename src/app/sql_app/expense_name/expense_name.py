@@ -48,7 +48,7 @@ class ExpenseName(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("user.id"), nullable=False
     )
-    name: Mapped[str] = mapped_column(nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(nullable=False)
 
     user: Mapped["User"] = relationship(
         "User", back_populates="expense_names", lazy="joined"

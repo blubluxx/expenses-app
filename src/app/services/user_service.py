@@ -9,7 +9,6 @@ from fastapi import status
 from app.schemas.user import BaseUser, UserRegistration, UserResponse
 from app.schemas.common.messages import ResponseMessage
 from app.services.utils import processors as p, validators as v, utils as u
-from app.schemas.common.application_error import ApplicationError
 from app.sql_app.user.user import User
 
 logger = logging.getLogger(__name__)

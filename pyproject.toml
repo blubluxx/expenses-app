@@ -29,4 +29,6 @@ dependencies = [
     "geopy>=2.4.1",
     "timezonefinder>=6.5.7",
     "pytz>=2024.2",
+    "pandas>=2.2.3",
+    "ruff>=0.9.9",
 ]

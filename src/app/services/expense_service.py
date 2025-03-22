@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import status
 
 from app.schemas.category import CategoryResponse
-from app.schemas.common.common import FilterOptions
-from app.schemas.common.messages import ResponseMessage
+from app.schemas.common.common import FilterOptions, ResponseMessage
+from app.schemas.common.enum import TimePeriod
 from app.schemas.expense import (
     ExpenseCreate,
     ExpenseResponse,
@@ -114,21 +114,39 @@ async def filter_expenses(
         return query.filter(Expense.date <= filter_options.end_date)
 
     if filter_options.time_period:
-        now = datetime.now()
-        match filter_options.time_period:
-            case "day":
-                start_of_period = now - timedelta(days=1)
-            case "week":
-                start_of_period = now - timedelta(days=now.weekday())
-            case "month":
-                start_of_period = now.replace(day=1)
-            case "year":
-                start_of_period = now.replace(month=1, day=1)
-            case _:
-                start_of_period = None
+        query = await filter_by_time_period(
+            query=query, time_period=filter_options.time_period
+        )
 
-        if start_of_period is not None:
-            query = query.filter(Expense.date >= start_of_period)
+    return query
+
+
+async def filter_by_time_period(query: Any, time_period: TimePeriod) -> Any:
+    """
+    Filter a query by given time period.
+
+    Args:
+        query (Any): The query to filter.
+        time_period (TimePeriod): The time period to filter by.
+
+    Returns:
+        Any: The filtered query.
+    """
+    now = datetime.now()
+    match time_period:
+        case TimePeriod.DAY:
+            start_of_period = now - timedelta(days=1)
+        case TimePeriod.WEEK:
+            start_of_period = now - timedelta(days=now.weekday())
+        case TimePeriod.MONTH:
+            start_of_period = now.replace(day=1)
+        case TimePeriod.MONTH:
+            start_of_period = now.replace(month=1, day=1)
+        case _:
+            start_of_period = None
+
+    if start_of_period is not None:
+        query = query.filter(Expense.date >= start_of_period)
 
     return query
 
@@ -245,7 +263,9 @@ async def _find_expense_name(
     """
 
     result = await db.execute(
-        select(ExpenseName).filter(ExpenseName.name == name, Expense.user_id == user_id)
+        select(ExpenseName).filter(
+            ExpenseName.name == name, ExpenseName.user_id == user_id
+        )
     )
     expense_name: Optional[ExpenseName] = result.scalars().first()
     logger.info(f"Fetched expense_name: {expense_name}")

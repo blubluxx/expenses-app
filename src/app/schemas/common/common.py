@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Literal, Optional
 from pydantic import BaseModel
 
+from app.schemas.common.enum import TimePeriod
+
 
 class Token(BaseModel):
     """
@@ -39,8 +41,16 @@ class FilterOptions(BaseModel):
     end_date: Optional[str] = datetime.now().strftime("%d-%m-%Y")
     min_amount: Optional[float] = None
     max_amount: Optional[float] = None
-    time_period: Optional[Literal["day", "week", "month", "year"]] = None
+    time_period: Optional[TimePeriod] = None
     sort_by: Literal["date", "amount"] = "date"
     order_by: Literal["asc", "desc"] = "desc"
     offset: int = 0
     limit: int = 10
+
+
+class ResponseMessage(BaseModel):
+    """
+    Represents a response message for a request.
+    """
+
+    message: str
