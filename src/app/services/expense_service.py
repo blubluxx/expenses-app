@@ -263,7 +263,9 @@ async def _find_expense_name(
     """
 
     result = await db.execute(
-        select(ExpenseName).filter(ExpenseName.name == name, Expense.user_id == user_id)
+        select(ExpenseName).filter(
+            ExpenseName.name == name, ExpenseName.user_id == user_id
+        )
     )
     expense_name: Optional[ExpenseName] = result.scalars().first()
     logger.info(f"Fetched expense_name: {expense_name}")
