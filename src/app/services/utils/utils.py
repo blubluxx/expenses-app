@@ -39,7 +39,9 @@ def get_timezone(city: str, country: str, state: str | None = None) -> Optional[
         str | None: The timezone of the location, if found.
     """
 
-    coordinates: tuple = get_coordinates(city=city, country=country, state=state)
+    coordinates: Optional[tuple[float, float]] = get_coordinates(
+        city=city, country=country, state=state
+    )
     if not coordinates:
         return None
     tf = TimezoneFinder()
