@@ -30,7 +30,9 @@ async def analyze_expenses(
     """
 
     async def _analyze_expenses():
-        query = select(Expense).filter(Expense.user_id == user_id)
+        query = select(Expense).filter(
+            Expense.user_id == user_id, Expense.is_deleted == False
+        )
         query = await filter_by_time_period(query=query, time_period=time_period)
         result = await db.execute(query)
         expenses: list[Expense] = result.scalars().unique()
@@ -39,18 +41,19 @@ async def analyze_expenses(
             {
                 "date": expense.date,
                 "amount": float(expense.amount),
-                "category": expense.name.category,
+                "category": expense.name.category.name,
             }
             for expense in expenses
         ]
         df = pd.DataFrame(expense_data)
 
         if df.empty:
-            return {"total_expenses": 0.0}
+            return {"total_expenses": []}
 
-        total_expenses = df["amount"].sum()
+        category_expenses = df.groupby("category")["amount"].sum().reset_index()
 
-        return {"total_expenses": total_expenses}
+        category_expenses = category_expenses.to_dict(orient="records")
+        return {"total_expenses": category_expenses}
 
     return await p.process_db_transaction(
         transaction_func=_analyze_expenses,
