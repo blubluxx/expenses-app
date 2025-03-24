@@ -27,7 +27,7 @@ async def analyze_expenses(
     """
 
     async def _analyze_expenses():
-        return await data_analysis_service.analyze_expenses(
+        return await data_analysis_service.analyze_expenses_time_period(
             user_id=user.id, time_period=time_period, db=db
         )
 

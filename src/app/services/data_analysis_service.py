@@ -14,7 +14,7 @@ from app.sql_app.expense.expense import Expense
 logger = logging.getLogger(__name__)
 
 
-async def analyze_expenses(
+async def analyze_expenses_time_period(
     user_id: int, time_period: TimePeriod, db: AsyncSession
 ) -> JSONResponse:
     """
