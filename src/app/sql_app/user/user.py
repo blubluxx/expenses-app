@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.sql_app.database import Base
 
 if TYPE_CHECKING:
-    from app.sql_app import Expense, ExpenseName
+    from app.sql_app import Expense, ExpenseName, CustomCategory
 
 
 class User(Base):
@@ -51,4 +51,7 @@ class User(Base):
     )
     expense_names: Mapped[list["ExpenseName"]] = relationship(
         "ExpenseName", back_populates="user", uselist=True, collection_class=list
+    )
+    custom_categories: Mapped[list["CustomCategory"]] = relationship(
+        "CustomCategory", back_populates="user", uselist=True, collection_class=list
     )
