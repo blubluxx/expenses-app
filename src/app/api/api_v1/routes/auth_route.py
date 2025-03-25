@@ -14,7 +14,7 @@ router = APIRouter()
 async def login(
     login_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Response:
     return await auth_service.login(login_data=login_data, db=db)
 
 
@@ -35,4 +35,6 @@ async def logout(request: Request) -> Response:
 async def get_current_user(
     user: UserResponse = Depends(auth_service.get_current_user),
 ) -> JSONResponse:
-    return {"user_id": user.id}
+    return JSONResponse(
+        content={"user_id": str(user.id)}, status_code=status.HTTP_200_OK
+    )

@@ -43,7 +43,7 @@ class ExpenseName(Base):
         nullable=False,
     )
     category_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("category.id"), nullable=False
+        UUID(as_uuid=True), ForeignKey("expense_category.id"), nullable=False
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("user.id"), nullable=False
