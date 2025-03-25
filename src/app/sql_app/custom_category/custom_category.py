@@ -1,14 +1,14 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, ForeignKey, UniqueConstraint, func
+from sqlalchemy import ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.sql_app.database import Base
 
 if TYPE_CHECKING:
-    from app.sql_app import User
+    from app.sql_app import User, ExpenseCategory
 
 
 class CustomCategory(Base):
@@ -34,7 +34,11 @@ class CustomCategory(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("user.id"), nullable=False
     )
+    is_deleted: Mapped[bool] = mapped_column(nullable=False, default=False)
 
     user: Mapped["User"] = relationship(
         "User", back_populates="custom_categories", lazy="joined"
+    )
+    expense_categories: Mapped[list["ExpenseCategory"]] = relationship(
+        "ExpenseCategory", back_populates="custom_category"
     )

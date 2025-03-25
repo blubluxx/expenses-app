@@ -8,12 +8,17 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.sql_app.database import Base
 
 if TYPE_CHECKING:
-    from app.sql_app import Category, CustomCategory
+    from app.sql_app import Category, CustomCategory, ExpenseName
 
 
 class ExpenseCategory(Base):
     """
     Links an expense name to either a global category or a custom category.
+
+    Args:
+        Optional[uuid.UUID]: The identifier of the global category.
+        Optional[uuid.UUID]: The identifier of the custom category.
+        name (str): The name of the category.
 
     Constraints:
         - Either `global_category_id` or `custom_category_id` must be set, but not both.
@@ -41,6 +46,14 @@ class ExpenseCategory(Base):
     custom_category_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("custom_category.id"), nullable=True
     )
+    name: Mapped[str] = mapped_column(nullable=False)
 
-    global_category: Mapped["Category"] = relationship("Category")
-    global_category: Mapped["CustomCategory"] = relationship("CustomCategory")
+    global_category: Mapped["Category"] = relationship(
+        "Category", back_populates="expense_categories"
+    )
+    custom_category: Mapped["CustomCategory"] = relationship(
+        "CustomCategory", back_populates="expense_categories"
+    )
+    expense_names: Mapped[list["ExpenseName"]] = relationship(
+        "ExpenseName", back_populates="category"
+    )

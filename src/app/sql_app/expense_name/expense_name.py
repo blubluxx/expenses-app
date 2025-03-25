@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.sql_app.database import Base
 
 if TYPE_CHECKING:
-    from app.sql_app import Expense, Category, User
+    from app.sql_app import Expense, User, ExpenseCategory
 
 
 class ExpenseName(Base):
@@ -53,8 +53,8 @@ class ExpenseName(Base):
     user: Mapped["User"] = relationship(
         "User", back_populates="expense_names", lazy="joined"
     )
-    category: Mapped["Category"] = relationship(
-        "Category", back_populates="expense_names", lazy="joined"
+    category: Mapped["ExpenseCategory"] = relationship(
+        "ExpenseCategory", back_populates="expense_names", lazy="joined"
     )
     expenses: Mapped[list["Expense"]] = relationship(
         "Expense",

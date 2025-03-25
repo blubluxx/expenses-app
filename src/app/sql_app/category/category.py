@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.sql_app.database import Base
 
 if TYPE_CHECKING:
-    from app.sql_app import ExpenseName
+    from app.sql_app.expense_category.expense_category import ExpenseCategory
 
 
 class Category(Base):
@@ -34,9 +34,6 @@ class Category(Base):
     )
     name: Mapped[str] = mapped_column(nullable=False, unique=True)
 
-    expense_names: Mapped[list["ExpenseName"]] = relationship(
-        "ExpenseName",
-        back_populates="category",
-        uselist=True,
-        collection_class=list,
+    expense_categories: Mapped[list["ExpenseCategory"]] = relationship(
+        "ExpenseCategory", back_populates="global_category"
     )
