@@ -339,14 +339,17 @@ async def _validate_data(
             detail="User not found.",
         )
 
-    return await _get_category(category_name=category_name, db=db)
+    return await _get_category(user_id=user_id, category_name=category_name, db=db)
 
 
-async def _get_category(category_name: str, db: AsyncSession) -> CategoryResponse:
+async def _get_category(
+    user_id: UUID, category_name: str, db: AsyncSession
+) -> CategoryResponse:
     """
     Get the category of the expense.
 
     Args:
+        user_id (UUID): The user's unique identifier.
         category_name (str): The name of the category.
         db (AsyncSession): The database session.
 
@@ -359,7 +362,9 @@ async def _get_category(category_name: str, db: AsyncSession) -> CategoryRespons
     return (
         category
         if category is not None
-        else await category_service.create_category(name=category_name, db=db)
+        else await category_service.create_custom_category(
+            user_id=user_id, name=category_name, db=db
+        )
     )
 
 
