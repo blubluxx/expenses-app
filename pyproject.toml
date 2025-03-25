@@ -31,4 +31,5 @@ dependencies = [
     "pytz>=2024.2",
     "pandas>=2.2.3",
     "ruff>=0.9.9",
+    "psycopg2-binary>=2.9.10",
 ]
