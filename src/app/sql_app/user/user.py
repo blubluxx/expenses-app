@@ -21,7 +21,11 @@ class User(Base):
         username (str): Username of the user.
         email (str): Email of the user.
         password (str): Password of the user.
-        created_at (datetime): Timestamp when the user was created.
+        timezone (str): Timezone of the user.
+        created_at (datetime): Timestamp when the user was created. Default = Current time.
+        is_admin (bool): Indicates if the user is an admin. Default = False.
+        is_deleted (bool): Indicates if the user is deleted. Default = False.
+        google_id (str): Google ID of the user, if applicable.
 
     Relationships:
         expenses (list[Expense]): The expenses associated with this user.
@@ -45,6 +49,7 @@ class User(Base):
     )
     is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    google_id: Mapped[str] = mapped_column(String, nullable=True, unique=True)
 
     expenses: Mapped[list["Expense"]] = relationship(
         "Expense", back_populates="user", uselist=True, collection_class=list
