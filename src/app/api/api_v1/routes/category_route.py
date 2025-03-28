@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.schemas.category import CategoryCreate
 from app.schemas.user import UserResponse
 from app.sql_app.database import get_db
 from app.services import category_service
@@ -17,13 +18,13 @@ router = APIRouter()
     description="Create a new category.",
 )
 async def create_category(
-    name: str,
+    category_name: CategoryCreate,
     user: UserResponse = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     async def _create_category():
         return await category_service.create_custom_category(
-            user_id=user.id, name=name, db=db
+            user_id=user.id, name=category_name.name, db=db
         )
 
     return await process_request(
