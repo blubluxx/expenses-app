@@ -1,4 +1,6 @@
-from fastapi import Request, Response
+import secrets
+import requests
+from fastapi import HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from authlib.integrations.starlette_client import OAuth
@@ -20,10 +22,7 @@ oauth.register(
     client_id=settings.GOOGLE_CLIENT_ID,
     client_secret=settings.GOOGLE_CLIENT_SECRET,
     authorize_url="https://accounts.google.com/o/oauth2/auth",
-    authorize_params=None,
     access_token_url="https://accounts.google.com/o/oauth2/token",
-    access_token_params=None,
-    refresh_token_url=None,
     redirect_uri=REDIRECT_URL,
     jwks_uri="https://www.googleapis.com/oauth2/v3/certs",
     client_kwargs={"scope": "openid profile email"},
@@ -31,23 +30,70 @@ oauth.register(
 
 
 async def login(request: Request):
+    """
+    Initiates the Google OAuth2 login process.
+
+    This function generates a unique state token, stores it in the session,
+    and redirects the user to the Google authorization URL.
+
+    Args:
+        request (Request): The HTTP request object.
+
+    Returns:
+        Response: A redirect response to the Google authorization URL.
+
+    """
     request.session.clear()
+    state = secrets.token_urlsafe(16)
+    request.session["oauth_state"] = state
 
     return await oauth.google.authorize_redirect(
-        request, REDIRECT_URL, prompt="consent"
+        request,
+        REDIRECT_URL,
+        state=state,
     )
 
 
 async def callback(request: Request, db: AsyncSession) -> Response:
+    """
+    Handles the callback from Google after the user has authorized the application.
+        This function verifies the state parameter, retrieves the access token,
+        and fetches the user's information from Google.
+
+        If the user is not registered, it registers them in the database.
+
+        Finally, it generates an access token and sets it in the response cookies.
+
+    Args:
+        request (Request): The HTTP request object.
+        db (AsyncSession): The database session.
+
+    Returns:
+        Response: A redirect response to the frontend URL with the access token set in cookies.
+
+    Raises:
+        HTTPException: If the state parameter is invalid or if there is an error during the OAuth process.
+    """
+
+    if request.query_params.get("state") != request.session.get("oauth_state"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid state parameter"
+        )
+
     token = await oauth.google.authorize_access_token(request)
-    user = token["userinfo"]
+
+    user_info_endpoint = "https://www.googleapis.com/oauth2/v2/userinfo"
+    headers = {"Authorization": f"Bearer {token['access_token']}"}
+    google_response = requests.get(user_info_endpoint, headers=headers)
+
+    user = google_response.json()
     logged_user: UserResponse = await _verify_user(user=user, db=db)
 
     data: dict = {"sub": str(logged_user.id)}
     access_token: Token = u.create_access_token(data=data)
-    response = RedirectResponse(FRONTEND_URL)
-    response = auth_service.set_cookies(token=access_token, response=response)
-    return response
+    return auth_service.set_cookies(
+        token=access_token, response=RedirectResponse(REDIRECT_URL)
+    )
 
 
 async def _verify_user(user: dict, db: AsyncSession) -> UserResponse:
@@ -56,6 +102,7 @@ async def _verify_user(user: dict, db: AsyncSession) -> UserResponse:
 
     Args:
         user (dict): The user data from Google.
+        db (AsyncSession): The database session.
 
     Returns:
         UserResponse: The user response object.
@@ -74,14 +121,22 @@ async def register_new_google_user(
 ) -> UserResponse:
     """
     Register a new Google user in the database.
+
+    Args:
+        user (dict): The user data from Google.
+        user_email (str): The user's email address.
+        db (AsyncSession): The database session.
+
+    Returns:
+        UserResponse: The created user response object.
+
     """
-    google_id = user["sub"]
     new_user: UserResponse = await user_service.create_new_user(
-        username=user_email,
+        username=user["name"],
         email=user_email,
         hashed_password=u.hash_password("default_password"),
         timezone="UTC",
-        google_id=google_id,
+        google_id=user["id"],
         db=db,
     )
     return new_user
