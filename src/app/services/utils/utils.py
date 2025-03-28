@@ -1,8 +1,18 @@
-from typing import Optional
+import logging
+from datetime import datetime, timedelta
+from typing import Any, Optional
 
+from fastapi import HTTPException, status
 from passlib.hash import argon2
 from geopy.geocoders import Nominatim
 from timezonefinder import TimezoneFinder
+from jose import ExpiredSignatureError, JWTError, jwt
+
+from app.core.config import Settings, get_settings
+from app.schemas.common.common import Token
+
+settings: Settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 def hash_password(password: str) -> str:
@@ -69,3 +79,74 @@ def get_coordinates(
     location = geolocator.geocode(location_query)
 
     return (location.latitude, location.longitude) if location else None
+
+
+def create_access_token(data: dict) -> Token:
+    """
+    Creates an access token.
+
+    Args:
+        data (dict): The data to encode.
+
+    Returns:
+        Token: The access token.
+
+    Raises:
+        HTTPException: If the token cannot be created.
+
+    """
+    try:
+        to_encode = data.copy()
+        expire = datetime.now() + timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+        to_encode.update({"exp": expire})
+        token: str = jwt.encode(
+            to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+        )
+        logger.info(msg="Created access token")
+
+        header_payload = ".".join(token.split(".")[:2])
+        signature = str(token.split(".")[2])
+
+        return Token(header_payload=header_payload, signature=signature)
+
+    except JWTError:
+        raise HTTPException(
+            detail="Could not create token",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+def verify_access_token(token: str) -> dict[str, Any]:
+    """
+    Verifies the provided JWT access token.
+
+    Args:
+        token (str): The JWT access token to be verified.
+
+    Returns:
+        dict[str, Any]: The decoded payload of the token if verification is successful.
+
+    Raises:
+        HTTPException: If the token has expired or cannot be verified.
+    """
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+
+        logger.info("Decoded token payload")
+        return payload
+    except ExpiredSignatureError:
+        logger.warning("Token has expired")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+        )
+    except JWTError:
+        logger.error("Could not verify token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not verify token",
+        )

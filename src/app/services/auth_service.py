@@ -1,15 +1,12 @@
 import logging
-from datetime import datetime, timedelta
 from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import ExpiredSignatureError, JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings, Settings
 from app.schemas.common.application_error import ApplicationError
 from app.sql_app.database import get_db
 from app.schemas.user import UserLogin, UserResponse
@@ -18,7 +15,6 @@ from app.services.utils import utils as u, validators as v, processors as p
 from app.services import user_service
 
 
-settings: Settings = get_settings()
 logger = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -40,9 +36,10 @@ async def login(login_data: OAuth2PasswordRequestForm, db: AsyncSession) -> Resp
 
     user_id: UUID = await _authenticate_user(user=user, db=db)
     data: dict = {"sub": str(user_id)}
-    access_token: Token = _create_access_token(data=data)
+    access_token: Token = u.create_access_token(data=data)
+    response = JSONResponse({"msg": "Logged in."})
 
-    return _set_cookies(token=access_token)
+    return set_cookies(token=access_token, response=response)
 
 
 async def logout(request: Request) -> Response:
@@ -75,42 +72,6 @@ async def logout(request: Request) -> Response:
     except KeyError as e:
         raise HTTPException(
             detail=f"Exception occurred: {e}, unable to log you out",
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
-
-
-def _set_cookies(token: Token) -> Response:
-    """
-    Sets cookies with header+payload and signature.
-
-    Args:
-        token_parts (dict): Dictionary containing header_payload and signature.
-
-    Returns:
-        Response: A JSON response indicating successful login with cookies set.
-    """
-    try:
-        response = JSONResponse({"msg": "Logged in."})
-        response.set_cookie(
-            key="uId",
-            value=token.header_payload,
-            httponly=False,
-            secure=True,
-            samesite="none",
-        )
-
-        response.set_cookie(
-            key="ATS",
-            value=token.signature,
-            httponly=True,
-            secure=True,
-            samesite="none",
-        )
-        logger.info(msg="Set cookies")
-        return response
-    except KeyError as e:
-        raise HTTPException(
-            detail=f"Exception occurred: {e}, unable to set cookies",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
@@ -151,74 +112,38 @@ async def _authenticate_user(user: UserLogin, db: AsyncSession) -> UUID:
     return user_db.id
 
 
-def _create_access_token(data: dict) -> Token:
+def set_cookies(token: Token, response: Response) -> Response:
     """
-    Creates an access token.
+    Sets cookies with header+payload and signature.
 
     Args:
-        data (dict): The data to encode.
+        token(Token): Dictionary containing header_payload and signature.
 
     Returns:
-        Token: The access token.
-
-    Raises:
-        HTTPException: If the token cannot be created.
-
+        Response: A JSON response indicating successful login with cookies set.
     """
     try:
-        to_encode = data.copy()
-        expire = datetime.now() + timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        response.set_cookie(
+            key="uId",
+            value=token.header_payload,
+            httponly=False,
+            secure=True,
+            samesite="none",
         )
-        to_encode.update({"exp": expire})
-        token: str = jwt.encode(
-            to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+
+        response.set_cookie(
+            key="ATS",
+            value=token.signature,
+            httponly=True,
+            secure=True,
+            samesite="none",
         )
-        logger.info(msg="Created access token")
-
-        header_payload = ".".join(token.split(".")[:2])
-        signature = str(token.split(".")[2])
-
-        return Token(header_payload=header_payload, signature=signature)
-
-    except JWTError:
+        logger.info(msg="Set cookies")
+        return response
+    except KeyError as e:
         raise HTTPException(
-            detail="Could not create token",
+            detail=f"Exception occurred: {e}, unable to set cookies",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
-
-
-def _verify_access_token(token: str) -> dict[str, Any]:
-    """
-    Verifies the provided JWT access token.
-
-    Args:
-        token (str): The JWT access token to be verified.
-
-    Returns:
-        dict[str, Any]: The decoded payload of the token if verification is successful.
-
-    Raises:
-        HTTPException: If the token has expired or cannot be verified.
-    """
-    try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
-
-        logger.info("Decoded token payload")
-        return payload
-    except ExpiredSignatureError:
-        logger.warning("Token has expired")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired",
-        )
-    except JWTError:
-        logger.error("Could not verify token")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not verify token",
         )
 
 
@@ -249,7 +174,7 @@ async def get_current_user(
         )
 
     token: str = f"{token_payload}.{token_signature}"
-    payload: dict = _verify_access_token(token)
+    payload: dict = u.verify_access_token(token)
     user_id: Optional[Any] = payload.get("sub")
 
     user: UserResponse = await user_service.get_by_id(user_id=UUID(user_id), db=db)
