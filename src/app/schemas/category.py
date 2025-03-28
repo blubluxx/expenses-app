@@ -1,5 +1,5 @@
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CategoryResponse(BaseModel):
@@ -13,6 +13,25 @@ class CategoryResponse(BaseModel):
 
     id: UUID
     name: str
+
+    class Config:
+        from_attributes = True
+
+
+class CategoryCreate(BaseModel):
+    """
+    A Pydantic model for creating a category.
+
+    Attributes:
+        name (str): The name of the category.
+    """
+
+    name: str = Field(
+        ...,
+        title="Category name",
+        description="The name of the category.",
+        example="Groceries",
+    )
 
     class Config:
         from_attributes = True

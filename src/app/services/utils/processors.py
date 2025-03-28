@@ -89,6 +89,13 @@ async def process_db_transaction(transaction_func: Callable, db: AsyncSession) -
             detail=f"{str(e)}",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Unexpected error: {str(e)}")
+        raise ApplicationError(
+            detail=f"An unexpected error occurred: {str(e)}",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 def _format_response(data) -> dict:

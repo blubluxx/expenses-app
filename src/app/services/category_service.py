@@ -6,7 +6,7 @@ from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.category import CategoryResponse
+from app.schemas.category import CategoryCreate, CategoryResponse
 from app.schemas.common.application_error import ApplicationError
 from app.schemas.user import UserResponse
 from app.services.utils import processors as p

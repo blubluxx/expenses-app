@@ -7,6 +7,7 @@ from app.api.api_v1.routes import auth_route
 from app.api.api_v1.routes import expense_route
 from app.api.api_v1.routes import category_route
 from app.api.api_v1.routes import analysis_route
+from app.api.api_v1.routes import google_auth
 
 api_router = APIRouter()
 
@@ -17,3 +18,4 @@ api_router.include_router(
     category_route.router, prefix="/categories", tags=["Categories"]
 )
 api_router.include_router(analysis_route.router, prefix="/analysis", tags=["Analysis"])
+api_router.include_router(google_auth.router, prefix="/google", tags=["Google Auth"])

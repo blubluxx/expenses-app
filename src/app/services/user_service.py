@@ -28,32 +28,66 @@ async def signup(user: UserRegistration, db: AsyncSession) -> ResponseMessage:
     """
 
     async def _signup():
-        user_data = BaseUser(username=user.username, email=user.email)
-        await _validate_data(user_data=user_data, db=db)
+        await _validate_data(
+            user_data=BaseUser(username=user.username, email=user.email), db=db
+        )
         hashed_password = u.hash_password(password=user.password)
         user_timezone = _get_user_timezone(user=user)
-        new_user = User(
-            **user.model_dump(
-                exclude={
-                    "password",
-                    "created_at",
-                    "city",
-                    "state",
-                    "country",
-                }
-            ),
-            password=hashed_password,
+        new_user: UserResponse = await create_new_user(
+            username=user.username,
+            email=user.email,
+            hashed_password=hashed_password,
             timezone=user_timezone,
+            db=db,
         )
-        logger.info(f"Registering user: {new_user.id}")
+
+        return ResponseMessage(
+            message=f"User {new_user.username} registered successfully"
+        )
+
+    return await p.process_db_transaction(
+        transaction_func=_signup,
+        db=db,
+    )
+
+
+async def create_new_user(
+    username: str,
+    email: str,
+    hashed_password: str,
+    timezone: str,
+    db: AsyncSession,
+    google_id: str | None = None,
+) -> UserResponse:
+    """
+    Create a new user in the database.
+
+    Args:
+        user (UserRegistration): The user to create.
+        hashed_password (str): The hashed password of the user.
+        db (AsyncSession): The database session.
+
+    Returns:
+        UserResponse: The created user.
+    """
+
+    async def _create():
+        new_user = User(
+            username=username,
+            email=email,
+            password=hashed_password,
+            timezone=timezone,
+            google_id=google_id,
+        )
+        logger.info(f"Created user: {new_user.id}")
         db.add(new_user)
         await db.commit()
         await db.refresh(new_user)
 
-        return ResponseMessage(message="User registered successfully")
+        return UserResponse.create(user=new_user)
 
     return await p.process_db_transaction(
-        transaction_func=_signup,
+        transaction_func=_create,
         db=db,
     )
 
@@ -139,6 +173,36 @@ async def get_by_username(username: str, db: AsyncSession) -> UserResponse:
 
         raise ApplicationError(
             detail=f"No user with username {username} found",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    logger.info(msg="Fetched user")
+    return UserResponse.create(user=user)
+
+
+async def get_by_email(email: str, db: AsyncSession) -> UserResponse:
+    """
+    Get a user by email.
+
+    Args:
+        email (str): The email to get.
+        db (AsyncSession): The database session.
+
+    Returns:
+        UserResponse: DTO representing the User entity.
+
+    Raises:
+        ApplicationError: If the user is not found.
+    """
+
+    result = await db.execute(select(User).filter(User.email == email))
+    user: Optional[User] = result.scalars().first()
+
+    if user is None:
+        logger.error(msg=f"No user with email {email} found")
+
+        raise ApplicationError(
+            detail=f"No user with email {email} found",
             status_code=status.HTTP_404_NOT_FOUND,
         )
 

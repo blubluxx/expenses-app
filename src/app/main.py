@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.api_v1.api import api_router
 from app.core.config import get_settings, Settings
@@ -52,4 +53,5 @@ async def lifespan(app: FastAPI):
 
 
 app = _create_app()
+app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 _setup_cors(app)
