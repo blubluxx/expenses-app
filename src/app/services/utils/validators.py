@@ -45,7 +45,7 @@ async def unique_email(email: str, db: AsyncSession) -> bool:
 
 async def user_exists(user_id: UUID, db: AsyncSession) -> bool:
     """
-    Checks if a user exists in the database by ID.
+    Checks if a user exists in the database by.
 
     Args:
         user_id (str): The user_id to check.
