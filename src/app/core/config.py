@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URL: str
 
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
     VERSION: str = "9.9.9.9"
