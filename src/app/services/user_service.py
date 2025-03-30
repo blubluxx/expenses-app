@@ -180,34 +180,26 @@ async def get_by_username(username: str, db: AsyncSession) -> UserResponse:
     return UserResponse.create(user=user)
 
 
-async def get_by_email(email: str, db: AsyncSession) -> UserResponse:
+async def get_by_google_id(google_id: str, db: AsyncSession) -> Optional[UserResponse]:
     """
-    Get a user by email.
+    Get a user by Google ID.
 
     Args:
-        email (str): The email to get.
+        google_id (str): The Google ID to get.
         db (AsyncSession): The database session.
 
     Returns:
-        UserResponse: DTO representing the User entity.
+        UserResponse | None: DTO representing the User entity or None.
 
     Raises:
         ApplicationError: If the user is not found.
     """
 
-    result = await db.execute(select(User).filter(User.email == email))
+    result = await db.execute(select(User).filter(User.google_id == google_id))
     user: Optional[User] = result.scalars().first()
 
-    if user is None:
-        logger.error(msg=f"No user with email {email} found")
-
-        raise ApplicationError(
-            detail=f"No user with email {email} found",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
-
-    logger.info(msg="Fetched user")
-    return UserResponse.create(user=user)
+    logger.info(msg=f"Fetched user with google_id {google_id}")
+    return UserResponse.create(user=user) if user else None
 
 
 async def get_by_id(user_id: UUID, db: AsyncSession) -> UserResponse:

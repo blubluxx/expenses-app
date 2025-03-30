@@ -38,7 +38,6 @@ async def login(login_data: OAuth2PasswordRequestForm, db: AsyncSession) -> Resp
     data: dict = {"sub": str(user_id)}
     access_token: Token = u.create_access_token(data=data)
     response = JSONResponse({"msg": "Logged in."})
-
     return set_cookies(token=access_token, response=response)
 
 

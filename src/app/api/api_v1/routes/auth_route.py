@@ -36,5 +36,5 @@ async def get_current_user(
     user: UserResponse = Depends(auth_service.get_current_user),
 ) -> JSONResponse:
     return JSONResponse(
-        content={"user_id": str(user.id)}, status_code=status.HTTP_200_OK
+        content={"user": user.model_dump_json()}, status_code=status.HTTP_200_OK
     )

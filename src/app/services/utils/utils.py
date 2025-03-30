@@ -95,6 +95,26 @@ def create_access_token(data: dict) -> Token:
         HTTPException: If the token cannot be created.
 
     """
+    token = create_jwt_token(data=data)
+    header_payload = ".".join(token.split(".")[:2])
+    signature = str(token.split(".")[2])
+    return Token(header_payload=header_payload, signature=signature)
+
+
+def create_jwt_token(data: dict) -> str:
+    """
+    Creates a JWT token.
+
+    Args:
+        data (dict): The data to encode.
+
+    Returns:
+        str: The access token.
+
+    Raises:
+        HTTPException: If the token cannot be created.
+
+    """
     try:
         to_encode = data.copy()
         expire = datetime.now() + timedelta(
@@ -106,10 +126,7 @@ def create_access_token(data: dict) -> Token:
         )
         logger.info(msg="Created access token")
 
-        header_payload = ".".join(token.split(".")[:2])
-        signature = str(token.split(".")[2])
-
-        return Token(header_payload=header_payload, signature=signature)
+        return token
 
     except JWTError:
         raise HTTPException(
