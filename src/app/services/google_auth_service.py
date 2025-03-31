@@ -15,7 +15,7 @@ from app.services.utils import utils as u
 
 settings: Settings = get_settings()
 
-FRONTEND_URL = str(settings.BACKEND_CORS_ORIGINS[0])
+FRONTEND_URL = f"{str(settings.BACKEND_CORS_ORIGINS[0])}dashboard"
 REDIRECT_URL = settings.GOOGLE_REDIRECT_URL
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
@@ -61,6 +61,12 @@ async def callback(request: Request, db: AsyncSession) -> Response:
     """
     code = request.query_params.get("code")
     jwt_token = request.query_params.get("state")
+
+    if code is None or jwt_token is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing code or state parameter",
+        )
 
     u.verify_access_token(token=jwt_token)
 
@@ -111,7 +117,7 @@ async def _get_google_token(code: str) -> str:
     return token_response_data.get("access_token")
 
 
-async def _get_google_user_info(token: str, db: AsyncSession) -> dict:
+async def _get_google_user_info(token: str, db: AsyncSession) -> UserResponse:
     """
     Retrieves user information from Google using the access token.
 
@@ -120,7 +126,7 @@ async def _get_google_user_info(token: str, db: AsyncSession) -> dict:
         db (AsyncSession): The database session.
 
     Returns:
-        dict: The user information.
+        UserResponse: The user information.
 
     Raises:
         HTTPException: If the user information retrieval fails.

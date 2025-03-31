@@ -135,3 +135,21 @@ class UserResponse(BaseModel):
     @field_validator("created_at", mode="before")
     def created_at_to_str(cls, value: datetime) -> str:
         return value.strftime("%d-%m-%Y %H:%M %Z")
+
+
+class UpdateUser(BaseModel):
+    """
+    A Pydantic model for updating user information.
+
+    Attributes:
+        username (str): The user's username.
+        email (EmailStr): The user's email address.
+        city (str): The user's city.
+        state (str | None): The user's state.
+        country (str): The user's country.
+    """
+
+    username: Optional[str] = Field(examples=["username_example"])
+    email: Optional[EmailStr]
+    timezone: Optional[str] = Field(examples=["UTC"])
+    password: Optional[str] = Field(examples=["Password_123!"])

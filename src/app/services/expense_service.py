@@ -479,9 +479,9 @@ async def _update_expense(
             logger.info(f"Updated expense category: {category.name}")
 
         expense.note = expense_update.note
-        logger.info(f"Updated expense note: {expense.note}")
         await db.commit()
         await db.refresh(expense)
+        logger.info(f"Updated expense note: {expense.note}")
         return ExpenseResponse.create(expense=expense)
 
     return await p.process_db_transaction(

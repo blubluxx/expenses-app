@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import status
 
 from app.schemas.common.application_error import ApplicationError
-from app.schemas.user import BaseUser, UserRegistration, UserResponse
+from app.schemas.user import BaseUser, UpdateUser, UserRegistration, UserResponse
 from app.schemas.common.common import ResponseMessage
 from app.services.utils import processors as p, validators as v, utils as u
 from app.sql_app.user.user import User
@@ -302,3 +302,70 @@ async def _get_db_user_by_id(user_id: UUID, db: AsyncSession) -> Optional[User]:
     user: Optional[User] = result.scalars().first()
     logger.info(f"Fetched user: {user.id if user else None}")
     return user
+
+
+async def update_user(
+    user: UserResponse, update_data: UpdateUser, db: AsyncSession
+) -> UserResponse:
+    """
+    Updates the User entity.
+
+    Args:
+        user (UserResponse): The current logged in User.
+        update_data (UpdateUser): The Pydantic model for User update.
+        db (AsyncSession): The database dependency.
+
+    Returns:
+        UserResponse: The updated User.
+    """
+
+    user: User = _get_db_user_by_id(user_id=user.id)
+    if user is None:
+        raise ApplicationError(
+            detail=f"User with ID {user.id} not found",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+    return await _update_user(user=user, update_data=update_data, db=db)
+
+
+async def _update_user(
+    user: User, update_data: UpdateUser, db: AsyncSession
+) -> UserResponse:
+    """
+    Updates the User entity.
+
+    Args:
+        user (User): The User entity.
+        update_data (UpdateUser): The Pydantic model for User update.
+        db (AsyncSession): The database dependency.
+
+    Returns:
+        UserResponse: DTO for the updated User entity.
+    """
+
+    async def _update():
+        if update_data.username is not None and v.unique_username(
+            username=update_data.username, db=db
+        ):
+            user.username = update_data.username
+        if update_data.email is not None and v.unique_email(
+            email=update_data.email, db=db
+        ):
+            user.email = update_data.email
+        if update_data.timezone is not None:
+            user.timezone = update_data.timezone
+        if update_data.password:
+            hashed_password = u.hash_password(password=update_data.password)
+            if hashed_password == user.password:
+                raise ApplicationError(
+                    detail="New password must be different from the old password",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+            user.password = hashed_password
+
+        await db.commit()
+        await db.refresh(user)
+        logger.info(f"Updated user info for user with ID {user.id}")
+        return UserResponse.create(user=user)
+
+    return await p.process_db_transaction(transaction_func=_update, db=db)

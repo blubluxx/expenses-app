@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.sql_app.database import get_db
-from app.schemas.user import BaseUser, UserRegistration
+from app.schemas.user import BaseUser, UpdateUser, UserRegistration, UserResponse
 from app.services import user_service
 from app.services import auth_service
 from app.services.utils.processors import process_request
@@ -50,8 +50,8 @@ async def signup(
 @router.get(
     "/all",
     description="Get all users",
-    status_code=status.HTTP_200_OK,
     dependencies=[Depends(auth_service.require_admin_role)],
+    status_code=status.HTTP_200_OK,
 )
 async def get_all(
     offset: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db)
@@ -70,6 +70,7 @@ async def get_all(
     "/{user_id}/role",
     description="Update user role",
     dependencies=[Depends(auth_service.require_admin_role)],
+    status_code=status.HTTP_200_OK,
 )
 async def change_user_role(
     id: UUID,
@@ -82,4 +83,24 @@ async def change_user_role(
         get_entities_fn=_change_user_role,
         status_code=status.HTTP_200_OK,
         not_found_err_msg="Could not change user role",
+    )
+
+
+@router.patch(
+    "update",
+    description="Update user data",
+    status_code=status.HTTP_200_OK,
+)
+async def update_user(
+    update_data: UpdateUser,
+    user: UserResponse = Depends(auth_service.get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    async def _update():
+        return await user_service.update_user(user=user, update_data=update_data, db=db)
+
+    return await process_request(
+        get_entities_fn=_update,
+        status_code=status.HTTP_200_OK,
+        not_found_err_msg="Could not update user",
     )
