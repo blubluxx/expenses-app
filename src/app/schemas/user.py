@@ -115,6 +115,7 @@ class UserResponse(BaseModel):
     is_deleted: bool
     created_at: str
     timezone: str
+    google_id: Optional[str]
 
     class Config:
         from_attributes = True
@@ -130,6 +131,7 @@ class UserResponse(BaseModel):
             is_deleted=user.is_deleted,
             created_at=user.created_at,
             timezone=user.timezone,
+            google_id=user.google_id,
         )
 
     @field_validator("created_at", mode="before")
@@ -149,7 +151,5 @@ class UpdateUser(BaseModel):
         country (str): The user's country.
     """
 
-    username: Optional[str] = Field(examples=["username_example"])
-    email: Optional[EmailStr]
     timezone: Optional[str] = Field(examples=["UTC"])
     password: Optional[str] = Field(examples=["Password_123!"])

@@ -54,20 +54,7 @@ async def logout(request: Request) -> Response:
     try:
         request.cookies.clear()
         response = JSONResponse({"msg": "Logged out."})
-        response.delete_cookie(
-            key="uId",
-            httponly=False,
-            secure=True,
-            samesite="none",
-        )
-        response.delete_cookie(
-            key="ATS",
-            httponly=True,
-            secure=True,
-            samesite="none",
-        )
-        logger.info(msg="Deleted cookie")
-        return response
+        return delete_cookies(response=response)
     except KeyError as e:
         raise HTTPException(
             detail=f"Exception occurred: {e}, unable to log you out",
@@ -146,8 +133,41 @@ def set_cookies(token: Token, response: Response) -> Response:
         )
 
 
+def delete_cookies(response: Response) -> Response:
+    """
+    Deletes cookies.
+
+    Args:
+        response (Response): The HTTP response object.
+
+    Returns:
+        Response: The HTTP response object with cookies deleted.
+    """
+    try:
+        response.delete_cookie(
+            key="uId",
+            httponly=False,
+            secure=True,
+            samesite="none",
+        )
+        response.delete_cookie(
+            key="ATS",
+            httponly=True,
+            secure=True,
+            samesite="none",
+        )
+        logger.info(msg="Deleted cookies")
+        return response
+    except KeyError as e:
+        raise HTTPException(
+            detail=f"Exception occurred: {e}, unable to delete cookies",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
 async def get_current_user(
-    request: Request, db: AsyncSession = Depends(get_db)
+    request: Request,
+    db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
     """
     Retrieve the current user based on the provided access token.
@@ -173,7 +193,16 @@ async def get_current_user(
         )
 
     token: str = f"{token_payload}.{token_signature}"
-    payload: dict = u.verify_access_token(token)
+    try:
+        payload: dict = u.verify_access_token(token)
+    except HTTPException as e:
+        response = Response()
+        response = delete_cookies(response=response)
+        response.status_code = e.status_code
+        response.body = e.detail.encode("utf-8")
+        logger.error("Token verification failed")
+        return response
+
     user_id: Optional[Any] = payload.get("sub")
 
     user: UserResponse = await user_service.get_by_id(user_id=UUID(user_id), db=db)

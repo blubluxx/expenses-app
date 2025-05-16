@@ -86,8 +86,8 @@ async def change_user_role(
     )
 
 
-@router.patch(
-    "update",
+@router.put(
+    "/",
     description="Update user data",
     status_code=status.HTTP_200_OK,
 )

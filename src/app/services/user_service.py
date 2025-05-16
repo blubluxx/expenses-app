@@ -344,14 +344,6 @@ async def _update_user(
     """
 
     async def _update():
-        if update_data.username is not None and v.unique_username(
-            username=update_data.username, db=db
-        ):
-            user.username = update_data.username
-        if update_data.email is not None and v.unique_email(
-            email=update_data.email, db=db
-        ):
-            user.email = update_data.email
         if update_data.timezone is not None:
             user.timezone = update_data.timezone
         if update_data.password:

@@ -34,7 +34,5 @@ async def logout(request: Request) -> Response:
 )
 async def get_current_user(
     user: UserResponse = Depends(auth_service.get_current_user),
-) -> JSONResponse:
-    return JSONResponse(
-        content={"user": user.model_dump_json()}, status_code=status.HTTP_200_OK
-    )
+) -> UserResponse:
+    return user
