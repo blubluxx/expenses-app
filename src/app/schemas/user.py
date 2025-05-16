@@ -153,3 +153,11 @@ class UpdateUser(BaseModel):
 
     timezone: Optional[str] = Field(examples=["UTC"])
     password: Optional[str] = Field(examples=["Password_123!"])
+
+    @field_validator("password")
+    def validate_password(cls, value) -> str:
+        if not re.match(PASSWORD_REGEX, value):
+            raise ValueError(
+                "Password must be between 8 and 30 characters long and contain at least one lowercase letter, one uppercase letter, one digit, and one special character."
+            )
+        return value

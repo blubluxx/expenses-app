@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Body, Depends, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -95,7 +95,7 @@ async def update_user(
     update_data: UpdateUser,
     user: UserResponse = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     async def _update():
         return await user_service.update_user(user=user, update_data=update_data, db=db)
 
@@ -103,4 +103,23 @@ async def update_user(
         get_entities_fn=_update,
         status_code=status.HTTP_200_OK,
         not_found_err_msg="Could not update user",
+    )
+
+
+@router.post(
+    "/verify-password",
+    description="Verify user password",
+    status_code=status.HTTP_200_OK,
+)
+async def verify_password(
+    password: str = Body(..., description="Input password value"),
+    user: UserResponse = Depends(auth_service.get_current_user),
+) -> JSONResponse:
+    async def _verify_password():
+        return await user_service.verify_password(password=password, user=user)
+
+    return await process_request(
+        get_entities_fn=_verify_password,
+        status_code=status.HTTP_200_OK,
+        not_found_err_msg="Could not verify password",
     )

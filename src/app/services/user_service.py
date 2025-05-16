@@ -306,7 +306,7 @@ async def _get_db_user_by_id(user_id: UUID, db: AsyncSession) -> Optional[User]:
 
 async def update_user(
     user: UserResponse, update_data: UpdateUser, db: AsyncSession
-) -> UserResponse:
+) -> ResponseMessage:
     """
     Updates the User entity.
 
@@ -319,13 +319,14 @@ async def update_user(
         UserResponse: The updated User.
     """
 
-    user: User = _get_db_user_by_id(user_id=user.id)
+    user: User = await _get_db_user_by_id(user_id=user.id, db=db)
     if user is None:
         raise ApplicationError(
             detail=f"User with ID {user.id} not found",
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
-    return await _update_user(user=user, update_data=update_data, db=db)
+    user = await _update_user(user=user, update_data=update_data, db=db)
+    return ResponseMessage(message="User updated successfully")
 
 
 async def _update_user(
@@ -361,3 +362,27 @@ async def _update_user(
         return UserResponse.create(user=user)
 
     return await p.process_db_transaction(transaction_func=_update, db=db)
+
+
+async def verify_password(
+    password: str,
+    user: UserResponse,
+) -> ResponseMessage:
+    """
+    Verify the user's password.
+
+    Args:
+        password (str): The password to verify.
+        user (UserResponse): The user to verify the password for.
+
+    Returns:
+        ResponseMessage: The response message.
+    """
+
+    if not u.verify_password(password=password, hashed_password=user.password):
+        raise ApplicationError(
+            detail="Invalid password",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    return ResponseMessage(message="Password verified successfully")
