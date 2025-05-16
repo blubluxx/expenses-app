@@ -170,7 +170,7 @@ async def get_all(user: UserResponse, db: AsyncSession) -> list[CategoryResponse
     result = await db.execute(
         select(Category.id, Category.name).union(
             select(CustomCategory.id, CustomCategory.name).filter(
-                CustomCategory.user_id == user.id
+                CustomCategory.user_id == user.id, CustomCategory.is_deleted == False
             )
         )
     )

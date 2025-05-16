@@ -135,12 +135,12 @@ async def filter_by_time_period(query: Any, time_period: TimePeriod) -> Any:
     now = datetime.now()
     match time_period:
         case TimePeriod.DAY:
-            start_of_period = now - timedelta(days=1)
+            start_of_period = now.replace(hour=0, minute=0, second=0, microsecond=0)
         case TimePeriod.WEEK:
             start_of_period = now - timedelta(days=now.weekday())
         case TimePeriod.MONTH:
             start_of_period = now.replace(day=1)
-        case TimePeriod.MONTH:
+        case TimePeriod.YEAR:
             start_of_period = now.replace(month=1, day=1)
         case _:
             start_of_period = None
